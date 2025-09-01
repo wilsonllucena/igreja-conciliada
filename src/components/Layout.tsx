@@ -23,6 +23,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenant } from '@/hooks/useTenant';
 import ProtectedRoute from './ProtectedRoute';
 
 interface LayoutProps {
@@ -34,6 +35,7 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { profile, signOut, isAdmin } = useAuth();
+  const { tenant } = useTenant();
 
   const handleSignOut = async () => {
     await signOut();
@@ -68,11 +70,11 @@ const Layout = ({ children }: LayoutProps) => {
               <Church className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold text-foreground">Igreja Sião</h1>
+              <h1 className="text-lg font-semibold text-foreground">{tenant?.name || 'ChurchOS'}</h1>
               <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
             </div>
             <div className="block sm:hidden">
-              <h1 className="text-base font-semibold text-foreground">Igreja Sião</h1>
+              <h1 className="text-base font-semibold text-foreground">{tenant?.name || 'ChurchOS'}</h1>
             </div>
           </div>
 
@@ -112,7 +114,7 @@ const Layout = ({ children }: LayoutProps) => {
                     <Church className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-semibold text-foreground">Igreja Sião</h1>
+                    <h1 className="text-lg font-semibold text-foreground">{tenant?.name || 'ChurchOS'}</h1>
                     <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
                   </div>
                 </div>

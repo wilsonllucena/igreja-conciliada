@@ -24,6 +24,7 @@ export default function Auth() {
   // Signup form state
   const [signupData, setSignupData] = useState({
     name: '',
+    churchName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -71,7 +72,7 @@ export default function Auth() {
       return;
     }
 
-    const { error } = await signUp(signupData.email, signupData.password, signupData.name);
+    const { error } = await signUp(signupData.email, signupData.password, signupData.name, signupData.churchName);
     
     if (error) {
       if (error.message.includes('User already registered')) {
@@ -102,10 +103,10 @@ export default function Auth() {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Church className="h-10 w-10 text-primary" />
-            <h1 className="text-3xl font-bold">Igreja Sião</h1>
+            <h1 className="text-3xl font-bold">ChurchOS</h1>
           </div>
           <p className="text-muted-foreground text-center">
-            Sistema de Gestão da Igreja
+            Sistema de Gestão para Igrejas
           </p>
         </div>
 
@@ -178,6 +179,18 @@ export default function Auth() {
                       placeholder="Seu nome completo"
                       value={signupData.name}
                       onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="churchName">Nome da Igreja</Label>
+                    <Input
+                      id="churchName"
+                      type="text"
+                      placeholder="Ex: Igreja Batista Central"
+                      value={signupData.churchName}
+                      onChange={(e) => setSignupData({ ...signupData, churchName: e.target.value })}
                       required
                       disabled={isLoading}
                     />
