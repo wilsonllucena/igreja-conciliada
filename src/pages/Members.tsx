@@ -86,10 +86,17 @@ const Members = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clean up form data - convert empty strings to null for optional fields
+    const cleanFormData = {
+      ...formData,
+      address: formData.address || null,
+      date_of_birth: formData.date_of_birth || null,
+    };
+    
     if (editingMember) {
-      await updateMember(editingMember.id, formData);
+      await updateMember(editingMember.id, cleanFormData);
     } else {
-      await createMember(formData);
+      await createMember(cleanFormData);
     }
     
     setIsCreateOpen(false);
