@@ -184,6 +184,7 @@ export type Database = {
           tenant_id: string
           type: Database["public"]["Enums"]["leader_type"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -196,6 +197,7 @@ export type Database = {
           tenant_id: string
           type: Database["public"]["Enums"]["leader_type"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -208,6 +210,7 @@ export type Database = {
           tenant_id?: string
           type?: Database["public"]["Enums"]["leader_type"]
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

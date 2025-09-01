@@ -19,7 +19,8 @@ import {
   UserCheck,
   Crown,
   Edit,
-  Trash
+  Trash,
+  Key
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -28,6 +29,9 @@ const Leaders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingLeader, setEditingLeader] = useState<Leader | null>(null);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [selectedLeader, setSelectedLeader] = useState<Leader | null>(null);
+  const [userPassword, setUserPassword] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -37,7 +41,7 @@ const Leaders = () => {
     is_available_for_appointments: true
   });
   
-  const { leaders, loading, createLeader, updateLeader, deleteLeader } = useLeaders();
+  const { leaders, loading, createLeader, updateLeader, deleteLeader, createUserForLeader } = useLeaders();
   
   const filteredLeaders = leaders.filter(leader =>
     leader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,6 +122,22 @@ const Leaders = () => {
     if (window.confirm(`Tem certeza que deseja excluir ${leader.name}?`)) {
       await deleteLeader(leader.id);
     }
+  };
+
+  const handleCreateUser = (leader: Leader) => {
+    setSelectedLeader(leader);
+    setUserPassword('');
+    setIsCreateUserOpen(true);
+  };
+
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLeader || !userPassword) return;
+
+    await createUserForLeader(selectedLeader.id, userPassword);
+    setIsCreateUserOpen(false);
+    setSelectedLeader(null);
+    setUserPassword('');
   };
 
   const availablePermissions = [
@@ -344,11 +364,22 @@ const Leaders = () => {
                   </div>
                 </div>
 
-                 <div className="flex space-x-2">
+                 <div className="flex flex-wrap gap-2">
                    <Button variant="outline" size="sm" onClick={() => handleEdit(leader)}>
                      <Edit className="h-4 w-4 mr-1" />
                      Editar
                    </Button>
+                   {!leader.user_id ? (
+                     <Button variant="outline" size="sm" onClick={() => handleCreateUser(leader)} className="text-green-600 hover:text-green-700">
+                       <Key className="h-4 w-4 mr-1" />
+                       Criar Usuário
+                     </Button>
+                   ) : (
+                     <Badge variant="secondary" className="text-green-600 border-green-600">
+                       <UserCheck className="h-3 w-3 mr-1" />
+                       Usuário Ativo
+                     </Badge>
+                   )}
                    <Button variant="outline" size="sm" onClick={() => handleDelete(leader)} className="text-red-600 hover:text-red-700">
                      <Trash className="h-4 w-4 mr-1" />
                      Excluir
@@ -372,6 +403,47 @@ const Leaders = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Criar Usuário para {selectedLeader?.name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateUserSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={selectedLeader?.email || ''}
+                disabled
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Senha Temporária *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={userPassword}
+                onChange={(e) => setUserPassword(e.target.value)}
+                placeholder="Digite uma senha temporária"
+                required
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                O líder poderá alterar a senha no primeiro acesso
+              </p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsCreateUserOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Criar Usuário
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

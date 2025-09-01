@@ -12,6 +12,7 @@ export interface Leader {
   permissions: string[];
   tenant_id: string;
   is_available_for_appointments: boolean;
+  user_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +72,75 @@ export function useLeaders() {
 
     fetchLeaders();
     return { data };
+  };
+
+  const createUserForLeader = async (leaderId: string, password: string) => {
+    const leader = leaders.find(l => l.id === leaderId);
+    if (!leader) return { error: new Error('Líder não encontrado') };
+
+    try {
+      // Create user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: leader.email,
+        password: password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: leader.name,
+            role: 'leader',
+            tenant_id: leader.tenant_id
+          }
+        }
+      });
+
+      if (authError) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o usuário.",
+          variant: "destructive",
+        });
+        return { error: authError };
+      }
+
+      if (!authData.user) {
+        toast({
+          title: "Erro",
+          description: "Usuário não foi criado corretamente.",
+          variant: "destructive",
+        });
+        return { error: new Error('Usuário não foi criado') };
+      }
+
+      // Update leader with user_id
+      const { error: updateError } = await supabase
+        .from('leaders')
+        .update({ user_id: authData.user.id })
+        .eq('id', leaderId);
+
+      if (updateError) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível vincular o usuário ao líder.",
+          variant: "destructive",
+        });
+        return { error: updateError };
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Usuário criado com sucesso! O líder deve confirmar o email para acessar o sistema.",
+      });
+
+      fetchLeaders();
+      return { data: authData.user };
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao criar usuário.",
+        variant: "destructive",
+      });
+      return { error };
+    }
   };
 
   const updateLeader = async (id: string, leaderData: Partial<Leader>) => {
@@ -135,6 +205,7 @@ export function useLeaders() {
     createLeader,
     updateLeader,
     deleteLeader,
+    createUserForLeader,
     refetch: fetchLeaders,
   };
 }
