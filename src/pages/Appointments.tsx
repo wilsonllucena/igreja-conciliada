@@ -80,14 +80,14 @@ const Appointments = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Agendamentos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Agendamentos</h1>
           <p className="text-muted-foreground">
             Gerencie agendamentos entre líderes e membros
           </p>
         </div>
-        <Button className="shadow-lg">
+        <Button className="shadow-lg w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Novo Agendamento
         </Button>
@@ -96,7 +96,7 @@ const Appointments = () => {
       {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -106,7 +106,7 @@ const Appointments = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <CalendarDays className="h-4 w-4 mr-2" />
               Filtrar Data
             </Button>
@@ -183,19 +183,19 @@ const Appointments = () => {
                           </div>
                         </div>
 
-                        <div className="flex space-x-2">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
                           {appointment.status === 'scheduled' && (
                             <>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                 Editar
                               </Button>
-                              <Button variant="default" size="sm">
+                              <Button variant="default" size="sm" className="w-full sm:w-auto">
                                 Concluir
                               </Button>
                             </>
                           )}
                           {appointment.status === 'completed' && (
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
                               Ver Detalhes
                             </Button>
                           )}

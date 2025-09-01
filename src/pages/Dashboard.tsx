@@ -34,15 +34,15 @@ const Dashboard = () => {
           className="absolute inset-0 bg-cover bg-center opacity-20"
           style={{ backgroundImage: `url(${heroImage})` }}
         />
-        <div className="relative px-8 py-12">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="max-w-2xl">
-            <h1 className="text-4xl font-bold text-white mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
               Bem-vindo ao Dashboard
             </h1>
-            <p className="text-xl text-white/90 mb-6">
+            <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-6">
               Gerencie sua igreja de forma simples e eficiente
             </p>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Button variant="secondary" size="lg" className="shadow-lg">
                 <Plus className="h-5 w-5 mr-2" />
                 Novo Evento

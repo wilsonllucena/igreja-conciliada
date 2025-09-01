@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Home, 
@@ -17,7 +18,8 @@ import {
   CalendarDays,
   LogOut,
   Settings,
-  Church
+  Church,
+  Menu
 } from 'lucide-react';
 import { mockUser, mockTenant } from '@/data/mockData';
 
@@ -27,6 +29,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
@@ -53,14 +56,17 @@ const Layout = ({ children }: LayoutProps) => {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
               <Church className="h-6 w-6 text-white" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
               <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
             </div>
+            <div className="block sm:hidden">
+              <h1 className="text-base font-semibold text-foreground">{mockTenant.name}</h1>
+            </div>
           </div>
 
-          {/* Navigation Menu */}
-          <nav className="ml-8 flex items-center space-x-1">
+          {/* Desktop Navigation Menu */}
+          <nav className="ml-8 hidden lg:flex items-center space-x-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -80,8 +86,50 @@ const Layout = ({ children }: LayoutProps) => {
             })}
           </nav>
 
-          {/* User Menu */}
-          <div className="ml-auto flex items-center space-x-4">
+          {/* Mobile Navigation Button & User Menu */}
+          <div className="ml-auto flex items-center space-x-2">
+            {/* Mobile Menu */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="lg:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <div className="flex items-center space-x-3 mb-8">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+                    <Church className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
+                    <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
+                  </div>
+                </div>
+                
+                <nav className="space-y-2">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center space-x-3 rounded-md px-3 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                          isActive(item.href)
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </SheetContent>
+            </Sheet>
+
+            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
