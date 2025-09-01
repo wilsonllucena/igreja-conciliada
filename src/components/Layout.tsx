@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,9 +19,11 @@ import {
   LogOut,
   Settings,
   Church,
-  Menu
+  Menu,
+  Shield
 } from 'lucide-react';
-import { mockUser, mockTenant } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from './ProtectedRoute';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -29,7 +31,14 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile, signOut, isAdmin } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');  
+  };
   
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
@@ -37,6 +46,7 @@ const Layout = ({ children }: LayoutProps) => {
     { href: '/leaders', label: 'Líderes', icon: UserCheck },
     { href: '/appointments', label: 'Agendamentos', icon: Calendar },
     { href: '/events', label: 'Eventos', icon: CalendarDays },
+    ...(isAdmin ? [{ href: '/users', label: 'Usuários', icon: Shield }] : []),
   ];
 
   const isActive = (path: string) => {
@@ -47,7 +57,8 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
@@ -57,11 +68,11 @@ const Layout = ({ children }: LayoutProps) => {
               <Church className="h-6 w-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
+              <h1 className="text-lg font-semibold text-foreground">Igreja Sião</h1>
               <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
             </div>
             <div className="block sm:hidden">
-              <h1 className="text-base font-semibold text-foreground">{mockTenant.name}</h1>
+              <h1 className="text-base font-semibold text-foreground">Igreja Sião</h1>
             </div>
           </div>
 
@@ -101,7 +112,7 @@ const Layout = ({ children }: LayoutProps) => {
                     <Church className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
+                    <h1 className="text-lg font-semibold text-foreground">Igreja Sião</h1>
                     <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
                   </div>
                 </div>
@@ -135,7 +146,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {mockUser.name.split(' ').map(n => n[0]).join('')}
+                      {profile?.name.split(' ').map(n => n[0]).join('') || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -143,12 +154,12 @@ const Layout = ({ children }: LayoutProps) => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{mockUser.name}</p>
+                    <p className="font-medium">{profile?.name}</p>
                     <p className="w-[200px] truncate text-sm text-muted-foreground">
-                      {mockUser.email}
+                      {profile?.email}
                     </p>
                     <p className="text-xs text-accent font-medium capitalize">
-                      {mockUser.role === 'admin' ? 'Administrador' : mockUser.role}
+                      {profile?.role === 'admin' ? 'Administrador' : profile?.role === 'leader' ? 'Líder' : 'Membro'}
                     </p>
                   </div>
                 </div>
@@ -157,7 +168,7 @@ const Layout = ({ children }: LayoutProps) => {
                   <Settings className="mr-2 h-4 w-4" />
                   Configurações
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">
+                <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
@@ -173,7 +184,8 @@ const Layout = ({ children }: LayoutProps) => {
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 };
 
