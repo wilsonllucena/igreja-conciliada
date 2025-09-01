@@ -29,6 +29,7 @@ export function useEvents() {
   const fetchEvents = async () => {
     if (!profile?.tenant_id) return;
 
+    console.log('fetchEvents - tenant_id:', profile.tenant_id);
     setLoading(true);
     const { data, error } = await supabase
       .from('events')
@@ -37,12 +38,14 @@ export function useEvents() {
       .order('scheduled_at', { ascending: true });
 
     if (error) {
+      console.error('fetchEvents error:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os eventos.",
         variant: "destructive",
       });
     } else {
+      console.log('fetchEvents success - events found:', data?.length || 0);
       setEvents(data || []);
     }
     setLoading(false);
@@ -105,6 +108,9 @@ export function useEvents() {
   const createEvent = async (eventData: Omit<Event, 'id' | 'tenant_id' | 'created_at' | 'updated_at' | 'current_attendees'>, bannerFile?: File) => {
     if (!profile?.tenant_id) return { error: new Error('Usuário não autenticado') };
 
+    console.log('createEvent - data:', eventData);
+    console.log('createEvent - tenant_id:', profile.tenant_id);
+
     const { data, error } = await supabase
       .from('events')
       .insert([{
@@ -116,6 +122,7 @@ export function useEvents() {
       .single();
 
     if (error) {
+      console.error('createEvent error:', error);
       toast({
         title: "Erro",
         description: "Não foi possível criar o evento.",
@@ -123,6 +130,8 @@ export function useEvents() {
       });
       return { error };
     }
+
+    console.log('createEvent success - event created:', data);
 
     // Upload banner if provided
     if (bannerFile && data) {
