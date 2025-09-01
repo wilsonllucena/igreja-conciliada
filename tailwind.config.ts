@@ -52,6 +52,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Igreja Conciliada custom colors
+				church: {
+					primary: 'hsl(var(--church-primary))',
+					'primary-light': 'hsl(var(--church-primary-light))',
+					gold: 'hsl(var(--church-gold))',
+					'gold-light': 'hsl(var(--church-gold-light))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

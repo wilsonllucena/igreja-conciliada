@@ -1,0 +1,132 @@
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Home, 
+  Users, 
+  UserCheck, 
+  Calendar, 
+  CalendarDays,
+  LogOut,
+  Settings,
+  Church
+} from 'lucide-react';
+import { mockUser, mockTenant } from '@/data/mockData';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout = ({ children }: LayoutProps) => {
+  const location = useLocation();
+  
+  const navItems = [
+    { href: '/', label: 'Dashboard', icon: Home },
+    { href: '/members', label: 'Membros', icon: Users },
+    { href: '/leaders', label: 'Líderes', icon: UserCheck },
+    { href: '/appointments', label: 'Agendamentos', icon: Calendar },
+    { href: '/events', label: 'Eventos', icon: CalendarDays },
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
+      {/* Top Navigation */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center">
+          {/* Logo and Church Name */}
+          <div className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+              <Church className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
+              <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="ml-8 flex items-center space-x-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`inline-flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                    isActive(item.href)
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User Menu */}
+          <div className="ml-auto flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {mockUser.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{mockUser.name}</p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {mockUser.email}
+                    </p>
+                    <p className="text-xs text-accent font-medium capitalize">
+                      {mockUser.role === 'admin' ? 'Administrador' : mockUser.role}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurações
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1">
+        <div className="container py-6">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
