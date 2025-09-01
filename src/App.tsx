@@ -11,6 +11,7 @@ import Appointments from "./pages/Appointments";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import CreateEvent from "./pages/CreateEvent";
+import EditEvent from "./pages/EditEvent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,11 @@ const App = () => (
           <Route path="/events/new" element={
             <Layout>
               <CreateEvent />
+            </Layout>
+          } />
+          <Route path="/events/:id/edit" element={
+            <Layout>
+              <EditEvent />
             </Layout>
           } />
           <Route path="/events/:id" element={<EventDetail />} />

@@ -169,10 +169,12 @@ const Events = () => {
               )}
 
               <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
+                <Link to={`/events/${event.id}/edit`}>
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </Link>
                 <Link to={`/events/${event.id}`}>
                   <Button variant="default" size="sm" className="w-full">
                     <Eye className="h-4 w-4 mr-2" />
