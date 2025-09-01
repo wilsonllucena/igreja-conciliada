@@ -20,12 +20,14 @@ import {
   Plus,
   X,
   Save,
-  Eye
+  Eye,
+  Upload
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useEvents } from '@/hooks/useEvents';
 
 interface EventFormData {
   title: string;
@@ -43,8 +45,11 @@ interface EventFormData {
 const CreateEvent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createEvent } = useEvents();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -83,6 +88,19 @@ const CreateEvent = () => {
     }));
   };
 
+  const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -98,16 +116,33 @@ const CreateEvent = () => {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Evento criado com sucesso!",
-        description: `O evento "${formData.title}" foi cadastrado e estará disponível em breve.`,
-      });
+    try {
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        scheduled_at: formData.scheduledAt.toISOString(),
+        is_public: formData.isPublic,
+        requires_payment: formData.requiresPayment,
+        price: formData.requiresPayment && formData.price ? parseFloat(formData.price) : null,
+        max_attendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
+        speakers: formData.speakers,
+      };
+
+      const result = await createEvent(eventData, bannerFile || undefined);
       
+      if (result?.data) {
+        toast({
+          title: "Evento criado com sucesso!",
+          description: `O evento "${formData.title}" foi cadastrado e estará disponível em breve.`,
+        });
+        navigate('/events');
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
       setIsSubmitting(false);
-      navigate('/events');
-    }, 2000);
+    }
   };
 
   const isFormValid = formData.title && formData.description && formData.scheduledAt && formData.location;
@@ -385,13 +420,23 @@ const CreateEvent = () => {
                     <div className="space-y-4">
                       {/* Banner Placeholder */}
                       <div className="relative h-32 rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
-                        <div className="absolute inset-0 bg-black/20" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center text-white">
-                            <Image className="h-8 w-8 mx-auto mb-2 opacity-60" />
-                            <p className="text-xs opacity-80">Banner do evento</p>
-                          </div>
-                        </div>
+                        {bannerPreview ? (
+                          <img 
+                            src={bannerPreview} 
+                            alt="Banner preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <>
+                            <div className="absolute inset-0 bg-black/20" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center text-white">
+                                <Image className="h-8 w-8 mx-auto mb-2 opacity-60" />
+                                <p className="text-xs opacity-80">Banner do evento</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -438,18 +483,37 @@ const CreateEvent = () => {
                     <CardTitle>Banner do Evento</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Carregar banner</p>
-                        <p className="text-xs text-muted-foreground">
-                          Formato recomendado: 16:9
-                        </p>
-                        <Button variant="outline" size="sm" type="button">
-                          Selecionar Arquivo
-                        </Button>
+                    <input
+                      id="banner-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBannerUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="banner-upload" className="cursor-pointer">
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
+                        {bannerPreview ? (
+                          <div className="space-y-2">
+                            <img 
+                              src={bannerPreview} 
+                              alt="Banner preview"
+                              className="w-full h-24 object-cover rounded mx-auto"
+                            />
+                            <p className="text-xs text-muted-foreground">Clique para alterar</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium">Carregar banner</p>
+                              <p className="text-xs text-muted-foreground">
+                                Formato recomendado: 16:9 (JPG, PNG)
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </div>
+                    </label>
                   </CardContent>
                 </Card>
 
