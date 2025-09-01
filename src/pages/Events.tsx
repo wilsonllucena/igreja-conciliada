@@ -50,10 +50,12 @@ const Events = () => {
             Crie e gerencie eventos da sua igreja
           </p>
         </div>
-        <Button className="shadow-lg w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Evento
-        </Button>
+        <Link to="/events/new">
+          <Button className="shadow-lg w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Evento
+          </Button>
+        </Link>
       </div>
 
       {/* Search and Filters */}

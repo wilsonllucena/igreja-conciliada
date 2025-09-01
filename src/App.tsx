@@ -10,6 +10,7 @@ import Leaders from "./pages/Leaders";
 import Appointments from "./pages/Appointments";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
+import CreateEvent from "./pages/CreateEvent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,11 @@ const App = () => (
           <Route path="/events" element={
             <Layout>
               <Events />
+            </Layout>
+          } />
+          <Route path="/events/new" element={
+            <Layout>
+              <CreateEvent />
             </Layout>
           } />
           <Route path="/events/:id" element={<EventDetail />} />

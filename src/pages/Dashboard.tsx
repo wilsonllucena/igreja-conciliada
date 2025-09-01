@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import StatCard from '@/components/StatCard';
 import { mockStats, mockAppointments, mockEvents } from '@/data/mockData';
 import { 
@@ -43,10 +44,12 @@ const Dashboard = () => {
               Gerencie sua igreja de forma simples e eficiente
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-              <Button variant="secondary" size="lg" className="shadow-lg">
-                <Plus className="h-5 w-5 mr-2" />
-                Novo Evento
-              </Button>
+              <Link to="/events/new">
+                <Button variant="secondary" size="lg" className="shadow-lg w-full sm:w-auto">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Novo Evento
+                </Button>
+              </Link>
               <Button variant="outline" size="lg" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
                 Ver Relatórios
               </Button>
