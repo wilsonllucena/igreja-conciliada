@@ -3,7 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockLeaders } from '@/data/mockData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useLeaders, type Leader } from '@/hooks/useLeaders';
 import { 
   Plus, 
   Search, 
@@ -12,15 +17,29 @@ import {
   Shield,
   Calendar,
   UserCheck,
-  Crown
+  Crown,
+  Edit,
+  Trash
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const Leaders = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingLeader, setEditingLeader] = useState<Leader | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    type: 'Diácono' as Leader['type'],
+    permissions: [] as string[],
+    is_available_for_appointments: true
+  });
   
-  const filteredLeaders = mockLeaders.filter(leader =>
+  const { leaders, loading, createLeader, updateLeader, deleteLeader } = useLeaders();
+  
+  const filteredLeaders = leaders.filter(leader =>
     leader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     leader.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     leader.type.toLowerCase().includes(searchTerm.toLowerCase())
@@ -51,6 +70,64 @@ const Leaders = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      type: 'Diácono',
+      permissions: [],
+      is_available_for_appointments: true
+    });
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setEditingLeader(null);
+    setIsCreateOpen(true);
+  };
+
+  const handleEdit = (leader: Leader) => {
+    setFormData({
+      name: leader.name,
+      email: leader.email,
+      phone: leader.phone,
+      type: leader.type,
+      permissions: leader.permissions,
+      is_available_for_appointments: leader.is_available_for_appointments
+    });
+    setEditingLeader(leader);
+    setIsCreateOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingLeader) {
+      await updateLeader(editingLeader.id, formData);
+    } else {
+      await createLeader(formData);
+    }
+    
+    setIsCreateOpen(false);
+    resetForm();
+    setEditingLeader(null);
+  };
+
+  const handleDelete = async (leader: Leader) => {
+    if (window.confirm(`Tem certeza que deseja excluir ${leader.name}?`)) {
+      await deleteLeader(leader.id);
+    }
+  };
+
+  const availablePermissions = [
+    'manage_events',
+    'manage_members',
+    'manage_appointments',
+    'view_reports',
+    'manage_finances'
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -61,10 +138,116 @@ const Leaders = () => {
             Gerencie os líderes e suas responsabilidades
           </p>
         </div>
-        <Button className="shadow-lg w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Líder
-        </Button>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={handleCreate} className="shadow-lg w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Líder
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingLeader ? 'Editar Líder' : 'Novo Líder'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Nome *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Telefone *</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="type">Tipo de Líder</Label>
+                  <Select value={formData.type} onValueChange={(value: Leader['type']) => setFormData({ ...formData, type: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pastor">Pastor</SelectItem>
+                      <SelectItem value="Líder de Louvor">Líder de Louvor</SelectItem>
+                      <SelectItem value="Líder de Jovens">Líder de Jovens</SelectItem>
+                      <SelectItem value="Líder Infantil">Líder Infantil</SelectItem>
+                      <SelectItem value="Diácono">Diácono</SelectItem>
+                      <SelectItem value="Presbítero">Presbítero</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label>Permissões</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {availablePermissions.map((permission) => (
+                    <div key={permission} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={permission}
+                        checked={formData.permissions.includes(permission)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData({ ...formData, permissions: [...formData.permissions, permission] });
+                          } else {
+                            setFormData({ ...formData, permissions: formData.permissions.filter(p => p !== permission) });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={permission} className="text-sm">
+                        {permission.replace(/_/g, ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_available_for_appointments"
+                  checked={formData.is_available_for_appointments}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_available_for_appointments: Boolean(checked) })}
+                />
+                <Label htmlFor="is_available_for_appointments">
+                  Disponível para agendamentos
+                </Label>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {editingLeader ? 'Atualizar' : 'Criar'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search and Filters */}
@@ -89,8 +272,22 @@ const Leaders = () => {
       </Card>
 
       {/* Leaders Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredLeaders.map((leader) => {
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-8 w-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredLeaders.map((leader) => {
           const LeaderIcon = getLeaderIcon(leader.type);
           return (
             <Card key={leader.id} className="hover:shadow-lg transition-shadow duration-300">
@@ -107,11 +304,11 @@ const Leaders = () => {
                       </Badge>
                     </div>
                   </div>
-                  {leader.isAvailableForAppointments && (
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      Disponível
-                    </Badge>
-                  )}
+                   {leader.is_available_for_appointments && (
+                     <Badge variant="outline" className="text-green-600 border-green-600">
+                       Disponível
+                     </Badge>
+                   )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -124,10 +321,10 @@ const Leaders = () => {
                     <Phone className="h-4 w-4 mr-2" />
                     {leader.phone}
                   </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Líder desde {format(leader.createdAt, "dd/MM/yyyy", { locale: ptBR })}
-                  </div>
+                   <div className="flex items-center text-sm text-muted-foreground">
+                     <Calendar className="h-4 w-4 mr-2" />
+                     Líder desde {format(new Date(leader.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                   </div>
                 </div>
 
                 {/* Permissions */}
@@ -147,19 +344,22 @@ const Leaders = () => {
                   </div>
                 </div>
 
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Editar
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Agenda
-                  </Button>
-                </div>
+                 <div className="flex space-x-2">
+                   <Button variant="outline" size="sm" onClick={() => handleEdit(leader)}>
+                     <Edit className="h-4 w-4 mr-1" />
+                     Editar
+                   </Button>
+                   <Button variant="outline" size="sm" onClick={() => handleDelete(leader)} className="text-red-600 hover:text-red-700">
+                     <Trash className="h-4 w-4 mr-1" />
+                     Excluir
+                   </Button>
+                 </div>
               </CardContent>
             </Card>
           );
-        })}
-      </div>
+         })}
+       </div>
+      )}
 
       {filteredLeaders.length === 0 && (
         <Card>
