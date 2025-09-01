@@ -7,17 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockEvents } from '@/data/mockData';
+import { mockEvents, mockTenant } from '@/data/mockData';
 import { 
   CalendarDays, 
   MapPin,
   Users,
   DollarSign,
   Clock,
-  ArrowLeft,
   Check,
   Share2,
-  Download
+  Download,
+  Church,
+  Globe,
+  ArrowLeft
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -113,17 +115,29 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-      {/* Header with back button */}
-      <div className="border-b bg-background/95 backdrop-blur">
+      {/* Public Header */}
+      <header className="border-b bg-background/95 backdrop-blur">
         <div className="container py-4">
-          <Link to="/events">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar aos Eventos
-            </Button>
-          </Link>
+          <div className="flex items-center justify-between">
+            {/* Church Branding */}
+            <div className="flex items-center space-x-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+                <Church className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">{mockTenant.name}</h1>
+                <p className="text-sm text-muted-foreground">Evento Público</p>
+              </div>
+            </div>
+
+            {/* Public Event Badge */}
+            <Badge className="bg-church-gold text-white">
+              <Globe className="h-3 w-3 mr-1" />
+              Aberto ao Público
+            </Badge>
+          </div>
         </div>
-      </div>
+      </header>
 
       <main className="container py-8">
         <div className="grid gap-8 lg:grid-cols-3">
@@ -419,8 +433,45 @@ const EventDetail = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Church Info */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent mx-auto">
+                    <Church className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{mockTenant.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Promovendo eventos que transformam vidas
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Este é um evento público. Venha participar conosco!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="border-t mt-16">
+          <div className="container py-8">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+                  <Church className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-semibold">{mockTenant.name}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                © 2024 {mockTenant.name}. Todos os direitos reservados.
+              </p>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   );

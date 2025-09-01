@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { mockEvents } from '@/data/mockData';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Search, 
@@ -22,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
   
   const filteredEvents = mockEvents.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -175,12 +177,29 @@ const Events = () => {
                     Editar
                   </Button>
                 </Link>
-                <Link to={`/events/${event.id}`}>
-                  <Button variant="default" size="sm" className="w-full">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver Página
+                <div className="flex space-x-1 flex-1">
+                  <Link to={`/events/${event.id}`} target="_blank" className="flex-1">
+                    <Button variant="default" size="sm" className="w-full">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Página
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const publicUrl = `${window.location.origin}/events/${event.id}`;
+                      navigator.clipboard.writeText(publicUrl);
+                      toast({
+                        title: "Link copiado!",
+                        description: "O link público do evento foi copiado para a área de transferência.",
+                      });
+                    }}
+                    title="Copiar link público"
+                  >
+                    <Share2 className="h-4 w-4" />
                   </Button>
-                </Link>
+                </div>
               </div>
             </CardContent>
           </Card>
