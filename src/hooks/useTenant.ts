@@ -22,20 +22,24 @@ export function useTenant() {
 
   const fetchTenant = async () => {
     if (!profile?.tenant_id) {
+      console.log('No tenant_id in profile:', profile);
       setLoading(false);
       return;
     }
 
+    console.log('Fetching tenant for tenant_id:', profile.tenant_id);
+    
     try {
       const { data, error } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', profile.tenant_id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching tenant:', error);
       } else {
+        console.log('Tenant data fetched:', data);
         setTenant(data);
       }
     } catch (error) {

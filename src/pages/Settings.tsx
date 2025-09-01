@@ -27,9 +27,17 @@ interface ChurchForm {
 
 export default function Settings() {
   const { profile, isAdmin } = useAuth();
-  const { tenant, refetch: refetchTenant } = useTenant();
+  const { tenant, loading: tenantLoading, refetch: refetchTenant } = useTenant();
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUpdatingChurch, setIsUpdatingChurch] = useState(false);
+
+  // Debug logs
+  React.useEffect(() => {
+    console.log('Settings - Profile:', profile);
+    console.log('Settings - Tenant:', tenant);
+    console.log('Settings - Is Admin:', isAdmin);
+    console.log('Settings - Tenant Loading:', tenantLoading);
+  }, [profile, tenant, isAdmin, tenantLoading]);
 
   const passwordForm = useForm<PasswordForm>();
   const churchForm = useForm<ChurchForm>({
@@ -101,11 +109,21 @@ export default function Settings() {
   };
 
   const onChurchSubmit = async (data: ChurchForm) => {
-    if (!isAdmin || !tenant) return;
+    if (!isAdmin || !tenant) {
+      console.log('Cannot update church - isAdmin:', isAdmin, 'tenant:', tenant);
+      toast({
+        title: "Erro",
+        description: "Você não tem permissão para alterar os dados da igreja ou dados não encontrados",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    console.log('Updating church data:', data, 'for tenant:', tenant.id);
     setIsUpdatingChurch(true);
+    
     try {
-      const { error } = await supabase
+      const { data: updateResult, error } = await supabase
         .from('tenants')
         .update({
           name: data.name,
@@ -115,7 +133,10 @@ export default function Settings() {
           website: data.website,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', tenant.id);
+        .eq('id', tenant.id)
+        .select();
+
+      console.log('Update result:', updateResult, 'error:', error);
 
       if (error) {
         throw error;
@@ -127,6 +148,7 @@ export default function Settings() {
       });
       refetchTenant();
     } catch (error: any) {
+      console.error('Error updating church data:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao atualizar dados da igreja",
@@ -198,6 +220,14 @@ export default function Settings() {
       {isAdmin && (
         <>
           <Separator />
+          {tenantLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Carregando dados da igreja...</span>
+              </CardContent>
+            </Card>
+          ) : (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -261,6 +291,7 @@ export default function Settings() {
               </form>
             </CardContent>
           </Card>
+          )}
         </>
       )}
     </div>
