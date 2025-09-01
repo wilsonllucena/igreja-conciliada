@@ -5,16 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTenant } from '@/hooks/useTenant';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Church, Key } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
+import { Loader2, Church, Key, AlertCircle, User } from 'lucide-react';
 
 interface PasswordForm {
-  currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+interface UserForm {
+  name: string;
+  phone: string;
 }
 
 interface ChurchForm {
@@ -26,138 +29,108 @@ interface ChurchForm {
 }
 
 export default function Settings() {
-  const { profile, isAdmin } = useAuth();
-  const { tenant, loading: tenantLoading, refetch: refetchTenant } = useTenant();
+  const { isAdmin } = useAuth();
+  const { 
+    userSettings, 
+    churchSettings, 
+    loading, 
+    error, 
+    updatePassword,
+    updateUserProfile,
+    updateChurchSettings 
+  } = useSettings();
+  
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   const [isUpdatingChurch, setIsUpdatingChurch] = useState(false);
 
-  // Debug logs
-  React.useEffect(() => {
-    console.log('Settings - Profile:', profile);
-    console.log('Settings - Tenant:', tenant);
-    console.log('Settings - Is Admin:', isAdmin);
-    console.log('Settings - Tenant Loading:', tenantLoading);
-  }, [profile, tenant, isAdmin, tenantLoading]);
-
   const passwordForm = useForm<PasswordForm>();
+  const userForm = useForm<UserForm>({
+    defaultValues: {
+      name: userSettings?.name || '',
+      phone: userSettings?.phone || '',
+    }
+  });
   const churchForm = useForm<ChurchForm>({
     defaultValues: {
-      name: tenant?.name || '',
-      address: tenant?.address || '',
-      phone: tenant?.phone || '',
-      email: tenant?.email || '',
-      website: tenant?.website || '',
+      name: churchSettings?.name || '',
+      address: churchSettings?.address || '',
+      phone: churchSettings?.phone || '',
+      email: churchSettings?.email || '',
+      website: churchSettings?.website || '',
     }
   });
 
-  // Reset church form when tenant data loads
+  // Reset forms when data loads
   React.useEffect(() => {
-    if (tenant) {
-      churchForm.reset({
-        name: tenant.name || '',
-        address: tenant.address || '',
-        phone: tenant.phone || '',
-        email: tenant.email || '',
-        website: tenant.website || '',
+    if (userSettings) {
+      userForm.reset({
+        name: userSettings.name || '',
+        phone: userSettings.phone || '',
       });
     }
-  }, [tenant, churchForm]);
+  }, [userSettings, userForm]);
+
+  React.useEffect(() => {
+    if (churchSettings) {
+      churchForm.reset({
+        name: churchSettings.name || '',
+        address: churchSettings.address || '',
+        phone: churchSettings.phone || '',
+        email: churchSettings.email || '',
+        website: churchSettings.website || '',
+      });
+    }
+  }, [churchSettings, churchForm]);
 
   const onPasswordSubmit = async (data: PasswordForm) => {
     if (data.newPassword !== data.confirmPassword) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
+      passwordForm.setError('confirmPassword', {
+        type: 'manual',
+        message: 'As senhas não coincidem'
       });
       return;
     }
 
     if (data.newPassword.length < 6) {
-      toast({
-        title: "Erro",
-        description: "A nova senha deve ter pelo menos 6 caracteres",
-        variant: "destructive",
+      passwordForm.setError('newPassword', {
+        type: 'manual',
+        message: 'A nova senha deve ter pelo menos 6 caracteres'
       });
       return;
     }
 
     setIsUpdatingPassword(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.newPassword
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Senha alterada com sucesso!",
-      });
+    const result = await updatePassword(data.newPassword);
+    
+    if (result.success) {
       passwordForm.reset();
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao alterar senha",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingPassword(false);
     }
+    setIsUpdatingPassword(false);
+  };
+
+  const onUserSubmit = async (data: UserForm) => {
+    setIsUpdatingUser(true);
+    await updateUserProfile(data);
+    setIsUpdatingUser(false);
   };
 
   const onChurchSubmit = async (data: ChurchForm) => {
-    if (!isAdmin || !tenant) {
-      console.log('Cannot update church - isAdmin:', isAdmin, 'tenant:', tenant);
-      toast({
-        title: "Erro",
-        description: "Você não tem permissão para alterar os dados da igreja ou dados não encontrados",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('Updating church data:', data, 'for tenant:', tenant.id);
     setIsUpdatingChurch(true);
-    
-    try {
-      const { data: updateResult, error } = await supabase
-        .from('tenants')
-        .update({
-          name: data.name,
-          address: data.address,
-          phone: data.phone,
-          email: data.email,
-          website: data.website,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tenant.id)
-        .select();
-
-      console.log('Update result:', updateResult, 'error:', error);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Dados da igreja atualizados com sucesso!",
-      });
-      refetchTenant();
-    } catch (error: any) {
-      console.error('Error updating church data:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar dados da igreja",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdatingChurch(false);
-    }
+    await updateChurchSettings(data);
+    setIsUpdatingChurch(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p className="text-muted-foreground">Carregando configurações...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -167,6 +140,68 @@ export default function Settings() {
           Gerencie suas configurações pessoais{isAdmin && ' e da igreja'}
         </p>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* User Profile Section */}
+      {userSettings && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Perfil do Usuário
+            </CardTitle>
+            <CardDescription>
+              Atualize suas informações pessoais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userName">Nome</Label>
+                  <Input
+                    id="userName"
+                    {...userForm.register('name', { required: true })}
+                    disabled={isUpdatingUser}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="userPhone">Telefone</Label>
+                  <Input
+                    id="userPhone"
+                    {...userForm.register('phone')}
+                    disabled={isUpdatingUser}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input value={userSettings.email} disabled />
+                <p className="text-sm text-muted-foreground">
+                  O e-mail não pode ser alterado
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Função</Label>
+                <Input 
+                  value={userSettings.role === 'admin' ? 'Administrador' : userSettings.role === 'leader' ? 'Líder' : 'Membro'} 
+                  disabled 
+                />
+              </div>
+              <Button type="submit" disabled={isUpdatingUser}>
+                {isUpdatingUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Perfil
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Password Section */}
       <Card>
@@ -182,15 +217,6 @@ export default function Settings() {
         <CardContent>
           <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Senha Atual</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                {...passwordForm.register('currentPassword', { required: true })}
-                disabled={isUpdatingPassword}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="newPassword">Nova Senha</Label>
               <Input
                 id="newPassword"
@@ -198,6 +224,11 @@ export default function Settings() {
                 {...passwordForm.register('newPassword', { required: true, minLength: 6 })}
                 disabled={isUpdatingPassword}
               />
+              {passwordForm.formState.errors.newPassword && (
+                <p className="text-sm text-destructive">
+                  {passwordForm.formState.errors.newPassword.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
@@ -207,6 +238,11 @@ export default function Settings() {
                 {...passwordForm.register('confirmPassword', { required: true })}
                 disabled={isUpdatingPassword}
               />
+              {passwordForm.formState.errors.confirmPassword && (
+                <p className="text-sm text-destructive">
+                  {passwordForm.formState.errors.confirmPassword.message}
+                </p>
+              )}
             </div>
             <Button type="submit" disabled={isUpdatingPassword}>
               {isUpdatingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -220,15 +256,19 @@ export default function Settings() {
       {isAdmin && (
         <>
           <Separator />
-          {tenantLoading ? (
+          {!churchSettings ? (
             <Card>
               <CardContent className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2">Carregando dados da igreja...</span>
+                <div className="text-center">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">
+                    Nenhum dado da igreja encontrado
+                  </p>
+                </div>
               </CardContent>
             </Card>
           ) : (
-          <Card>
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Church className="h-5 w-5" />
@@ -289,8 +329,8 @@ export default function Settings() {
                   Salvar Alterações
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
