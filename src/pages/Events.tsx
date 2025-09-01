@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { mockEvents } from '@/data/mockData';
+import { useEvents } from '@/hooks/useEvents';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
@@ -24,8 +24,9 @@ import { ptBR } from 'date-fns/locale';
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { events, loading, getPublicEventLink } = useEvents();
   
-  const filteredEvents = mockEvents.filter(event =>
+  const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -41,6 +42,17 @@ const Events = () => {
     if (!max) return 0;
     return Math.round((current / max) * 100);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando eventos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -90,13 +102,13 @@ const Events = () => {
               <div className="absolute inset-0 bg-black/20" />
               <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
                 <div>
-                  {event.isPublic && (
+                  {event.is_public && (
                     <Badge className="bg-white/20 text-white border-white/30 mb-2">
                       <Globe className="h-3 w-3 mr-1" />
                       Público
                     </Badge>
                   )}
-                  {event.requiresPayment && (
+                  {event.requires_payment && (
                     <Badge className="bg-church-gold text-white">
                       <DollarSign className="h-3 w-3 mr-1" />
                       {formatCurrency(event.price || 0)}
@@ -111,7 +123,7 @@ const Events = () => {
                 <h3 className="text-white text-xl font-bold mb-2">{event.title}</h3>
                 <div className="flex items-center text-white/90 text-sm">
                   <CalendarDays className="h-4 w-4 mr-2" />
-                  {format(event.scheduledAt, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                  {format(new Date(event.scheduled_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                 </div>
               </div>
             </div>
@@ -126,21 +138,21 @@ const Events = () => {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center text-muted-foreground">
                     <Users className="h-4 w-4 mr-2" />
-                    <span>{event.currentAttendees} inscritos</span>
+                    <span>{event.current_attendees} inscritos</span>
                   </div>
-                  {event.maxAttendees && (
+                  {event.max_attendees && (
                     <span className="text-xs text-muted-foreground">
-                      {getAttendancePercentage(event.currentAttendees, event.maxAttendees)}% ocupado
+                      {getAttendancePercentage(event.current_attendees, event.max_attendees)}% ocupado
                     </span>
                   )}
                 </div>
 
-                {event.maxAttendees && (
+                {event.max_attendees && (
                   <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ 
-                        width: `${Math.min(getAttendancePercentage(event.currentAttendees, event.maxAttendees), 100)}%` 
+                        width: `${Math.min(getAttendancePercentage(event.current_attendees, event.max_attendees), 100)}%` 
                       }}
                     />
                   </div>
@@ -178,7 +190,7 @@ const Events = () => {
                   </Button>
                 </Link>
                 <div className="flex space-x-1 flex-1">
-                  <Link to={`/events/${event.id}`} target="_blank" className="flex-1">
+                  <Link to={getPublicEventLink(event.id)} target="_blank" className="flex-1">
                     <Button variant="default" size="sm" className="w-full">
                       <Eye className="h-4 w-4 mr-2" />
                       Ver Página
@@ -188,7 +200,7 @@ const Events = () => {
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      const publicUrl = `${window.location.origin}/events/${event.id}`;
+                      const publicUrl = getPublicEventLink(event.id);
                       navigator.clipboard.writeText(publicUrl);
                       toast({
                         title: "Link copiado!",

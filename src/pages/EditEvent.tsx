@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { mockEvents } from '@/data/mockData';
+import { useEvents } from '@/hooks/useEvents';
 import { 
   ArrowLeft,
   CalendarDays,
@@ -46,9 +46,11 @@ const EditEvent = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getEventById, updateEvent, deleteEvent } = useEvents();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [bannerFile, setBannerFile] = useState<File | undefined>();
   
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -65,10 +67,15 @@ const EditEvent = () => {
 
   // Load event data
   useEffect(() => {
-    const loadEventData = () => {
-      const event = mockEvents.find(e => e.id === id);
+    const loadEventData = async () => {
+      if (!id) {
+        navigate('/events');
+        return;
+      }
+
+      const result = await getEventById(id);
       
-      if (!event) {
+      if (result.error || !result.data) {
         toast({
           title: "Evento não encontrado",
           description: "O evento que você está tentando editar não existe.",
@@ -78,16 +85,18 @@ const EditEvent = () => {
         return;
       }
 
+      const event = result.data;
+
       // Populate form with existing data
       setFormData({
         title: event.title,
         description: event.description,
-        scheduledAt: event.scheduledAt,
+        scheduledAt: new Date(event.scheduled_at),
         location: event.location,
-        isPublic: event.isPublic,
-        requiresPayment: event.requiresPayment,
+        isPublic: event.is_public,
+        requiresPayment: event.requires_payment,
         price: event.price ? event.price.toString() : '',
-        maxAttendees: event.maxAttendees ? event.maxAttendees.toString() : '',
+        maxAttendees: event.max_attendees ? event.max_attendees.toString() : '',
         speakers: [...event.speakers],
         currentSpeaker: ''
       });
@@ -96,7 +105,7 @@ const EditEvent = () => {
     };
 
     loadEventData();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, getEventById]);
 
   const handleInputChange = (field: keyof EventFormData, value: string | boolean | Date | undefined) => {
     setFormData(prev => ({
@@ -127,7 +136,7 @@ const EditEvent = () => {
     setIsSubmitting(true);
 
     // Validation
-    if (!formData.title || !formData.description || !formData.scheduledAt || !formData.location) {
+    if (!formData.title || !formData.description || !formData.scheduledAt || !formData.location || !id) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -137,25 +146,38 @@ const EditEvent = () => {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Evento atualizado com sucesso!",
-        description: `O evento "${formData.title}" foi atualizado.`,
-      });
-      
+    const eventData = {
+      title: formData.title,
+      description: formData.description,
+      scheduled_at: formData.scheduledAt.toISOString(),
+      location: formData.location,
+      is_public: formData.isPublic,
+      requires_payment: formData.requiresPayment,
+      price: formData.requiresPayment && formData.price ? parseFloat(formData.price) : undefined,
+      max_attendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : undefined,
+      speakers: formData.speakers,
+    };
+
+    const result = await updateEvent(id, eventData, bannerFile);
+    
+    if (result.error) {
       setIsSubmitting(false);
-      navigate('/events');
-    }, 2000);
+      return;
+    }
+
+    setIsSubmitting(false);
+    navigate('/events');
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!id) return;
+    
     if (window.confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
-      toast({
-        title: "Evento excluído",
-        description: "O evento foi excluído com sucesso.",
-      });
-      navigate('/events');
+      const result = await deleteEvent(id);
+      
+      if (!result.error) {
+        navigate('/events');
+      }
     }
   };
 
