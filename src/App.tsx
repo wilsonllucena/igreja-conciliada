@@ -16,6 +16,7 @@ import EditEvent from "./pages/EditEvent";
 import PublicEvent from "./pages/PublicEvent";
 import Auth from "./pages/Auth";
 import Users from "./pages/Users";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,11 @@ const App = () => (
             <Route path="/users" element={
               <Layout>
                 <Users />
+              </Layout>
+            } />
+            <Route path="/settings" element={
+              <Layout>
+                <Settings />
               </Layout>
             } />
             <Route path="/evento/:id" element={<PublicEvent />} />
