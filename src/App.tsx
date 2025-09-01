@@ -9,6 +9,7 @@ import Members from "./pages/Members";
 import Leaders from "./pages/Leaders";
 import Appointments from "./pages/Appointments";
 import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Events />
             </Layout>
           } />
+          <Route path="/events/:id" element={<EventDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

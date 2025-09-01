@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -170,10 +171,12 @@ const Events = () => {
                   <Edit className="h-4 w-4 mr-2" />
                   Editar
                 </Button>
-                <Button variant="default" size="sm" className="flex-1">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Ver Página
-                </Button>
+                <Link to={`/events/${event.id}`}>
+                  <Button variant="default" size="sm" className="w-full">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Página
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
