@@ -53,6 +53,16 @@ export function useTenant() {
     fetchTenant();
   }, [profile?.tenant_id]);
 
+  // Listen for tenant updates to refresh data
+  useEffect(() => {
+    const handleTenantUpdate = () => {
+      fetchTenant();
+    };
+
+    window.addEventListener('tenant-updated', handleTenantUpdate);
+    return () => window.removeEventListener('tenant-updated', handleTenantUpdate);
+  }, []);
+
   return {
     tenant,
     loading,

@@ -66,8 +66,16 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="container flex h-16 items-center">
           {/* Logo and Church Name */}
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-              <Church className="h-6 w-6 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
+              {tenant?.logo ? (
+                <img 
+                  src={tenant.logo} 
+                  alt={`Logo ${tenant.name}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Church className="h-6 w-6 text-white" />
+              )}
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-semibold text-foreground">{tenant?.name || 'ChurchOS'}</h1>
@@ -110,8 +118,16 @@ const Layout = ({ children }: LayoutProps) => {
               </SheetTrigger>
               <SheetContent side="left" className="w-80">
                 <div className="flex items-center space-x-3 mb-8">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-                    <Church className="h-6 w-6 text-white" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent overflow-hidden">
+                    {tenant?.logo ? (
+                      <img 
+                        src={tenant.logo} 
+                        alt={`Logo ${tenant.name}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Church className="h-6 w-6 text-white" />
+                    )}
                   </div>
                   <div>
                     <h1 className="text-lg font-semibold text-foreground">{tenant?.name || 'ChurchOS'}</h1>

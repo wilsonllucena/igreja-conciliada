@@ -193,6 +193,10 @@ export function useSettings() {
 
       toast.success('Logo da igreja atualizada com sucesso!');
       await fetchSettings();
+      
+      // Force tenant data refresh to update logo throughout the app
+      window.dispatchEvent(new CustomEvent('tenant-updated'));
+      
       return { success: true, url: publicUrl };
     } catch (error) {
       console.error('Error uploading church logo:', error);
