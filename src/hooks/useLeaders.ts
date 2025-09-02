@@ -99,6 +99,7 @@ export function useLeaders() {
           description: "Não foi possível criar o usuário.",
           variant: "destructive",
         });
+        console.error('Error creating user:', authError);
         return { error: authError };
       }
 
