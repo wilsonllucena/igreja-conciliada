@@ -126,23 +126,40 @@ export default function Settings() {
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🖼️ Logo upload handler triggered');
     const file = event.target.files?.[0];
-    if (!file) return;
+    
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
+    }
+
+    console.log('📸 File selected:', { name: file.name, size: file.size, type: file.type });
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
+      console.error('❌ Invalid file type:', file.type);
       toast.error('Por favor, selecione um arquivo de imagem');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
+      console.error('❌ File too large:', file.size);
       toast.error('A imagem deve ter no máximo 5MB');
       return;
     }
 
+    console.log('✅ File validation passed, starting upload...');
     setIsUploadingLogo(true);
-    await uploadChurchLogo(file);
+    
+    try {
+      const result = await uploadChurchLogo(file);
+      console.log('🎯 Upload result:', result);
+    } catch (error) {
+      console.error('💥 Upload handler error:', error);
+    }
+    
     setIsUploadingLogo(false);
     
     // Reset input

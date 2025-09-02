@@ -161,36 +161,69 @@ export function useSettings() {
   };
 
   const uploadChurchLogo = async (file: File) => {
-    if (!profile || profile.role !== 'admin') {
+    console.log('🚀 Starting logo upload process...');
+    console.log('Profile data:', profile);
+    console.log('File info:', { name: file.name, size: file.size, type: file.type });
+    
+    if (!profile) {
+      console.error('❌ No profile found');
+      toast.error('Usuário não autenticado');
+      return { success: false, url: null };
+    }
+    
+    if (profile.role !== 'admin') {
+      console.error('❌ User is not admin:', profile.role);
       toast.error('Sem permissão para alterar logo da igreja');
       return { success: false, url: null };
     }
+
+    console.log('✅ User is admin, proceeding with upload...');
 
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${profile.tenant_id}.${fileExt}`;
       const filePath = `${fileName}`;
 
+      console.log('📁 Upload details:', { fileName, filePath, tenantId: profile.tenant_id });
+
       // Upload file to storage
-      const { error: uploadError } = await supabase.storage
+      console.log('📤 Uploading to Supabase storage...');
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('church-logos')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      console.log('Upload result:', { uploadData, uploadError });
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ File uploaded successfully');
 
       // Get public URL
+      console.log('🔗 Getting public URL...');
       const { data: { publicUrl } } = supabase.storage
         .from('church-logos')
         .getPublicUrl(filePath);
 
+      console.log('📎 Public URL:', publicUrl);
+
       // Update tenant with logo URL
-      const { error: updateError } = await supabase
+      console.log('💾 Updating tenant record...');
+      const { data: updateData, error: updateError } = await supabase
         .from('tenants')
         .update({ logo: publicUrl })
         .eq('id', profile.tenant_id);
 
-      if (updateError) throw updateError;
+      console.log('Update result:', { updateData, updateError });
 
+      if (updateError) {
+        console.error('❌ Update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Logo upload completed successfully!');
       toast.success('Logo da igreja atualizada com sucesso!');
       await fetchSettings();
       
@@ -199,8 +232,8 @@ export function useSettings() {
       
       return { success: true, url: publicUrl };
     } catch (error) {
-      console.error('Error uploading church logo:', error);
-      toast.error('Erro ao fazer upload da logo');
+      console.error('💥 Error in logo upload process:', error);
+      toast.error(`Erro ao fazer upload da logo: ${error.message || 'Erro desconhecido'}`);
       return { success: false, url: null };
     }
   };
