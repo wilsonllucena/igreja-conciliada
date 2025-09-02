@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/hooks/useSettings';
-import { Loader2, Church, Key, AlertCircle, User } from 'lucide-react';
+import { Loader2, Church, Key, AlertCircle, User, Upload, Image } from 'lucide-react';
+import { toast } from "sonner";
 
 interface PasswordForm {
   newPassword: string;
@@ -37,12 +38,15 @@ export default function Settings() {
     error, 
     updatePassword,
     updateUserProfile,
-    updateChurchSettings 
+    updateChurchSettings,
+    uploadChurchLogo
   } = useSettings();
   
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   const [isUpdatingChurch, setIsUpdatingChurch] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const passwordForm = useForm<PasswordForm>();
   const userForm = useForm<UserForm>({
@@ -119,6 +123,32 @@ export default function Settings() {
     setIsUpdatingChurch(true);
     await updateChurchSettings(data);
     setIsUpdatingChurch(false);
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    await uploadChurchLogo(file);
+    setIsUploadingLogo(false);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   if (loading) {
@@ -279,7 +309,57 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={churchForm.handleSubmit(onChurchSubmit)} className="space-y-4">
+              <form onSubmit={churchForm.handleSubmit(onChurchSubmit)} className="space-y-6">
+                {/* Logo Upload Section */}
+                <div className="space-y-4">
+                  <Label>Logo da Igreja</Label>
+                  <div className="flex items-center space-x-4">
+                    {churchSettings?.logo && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={churchSettings.logo}
+                          alt="Logo da Igreja"
+                          className="h-16 w-16 rounded-lg object-cover border"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        disabled={isUploadingLogo}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingLogo}
+                        className="w-full sm:w-auto"
+                      >
+                        {isUploadingLogo ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {churchSettings?.logo ? 'Alterar Logo' : 'Enviar Logo'}
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        PNG, JPG ou JPEG até 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome da Igreja</Label>

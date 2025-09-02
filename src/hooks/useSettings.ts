@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface UserSettings {
   id: string;
@@ -18,6 +18,7 @@ export interface ChurchSettings {
   phone?: string;
   email?: string;
   website?: string;
+  logo?: string;
   slug?: string;
 }
 
@@ -67,6 +68,7 @@ export function useSettings() {
             phone: tenantData.phone,
             email: tenantData.email,
             website: tenantData.website,
+            logo: tenantData.logo,
             slug: tenantData.slug,
           });
         } else {
@@ -90,18 +92,11 @@ export function useSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Senha alterada com sucesso!",
-      });
+      toast.success("Senha alterada com sucesso!");
       return { success: true };
     } catch (error: any) {
       console.error('Error updating password:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao alterar senha",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Erro ao alterar senha");
       return { success: false, error: error.message };
     }
   };
@@ -124,18 +119,11 @@ export function useSettings() {
       // Update local state
       setUserSettings(prev => prev ? { ...prev, ...data } : null);
 
-      toast({
-        title: "Sucesso",
-        description: "Perfil atualizado com sucesso!",
-      });
+      toast.success("Perfil atualizado com sucesso!");
       return { success: true };
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar perfil",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Erro ao atualizar perfil");
       return { success: false, error: error.message };
     }
   };
@@ -163,19 +151,53 @@ export function useSettings() {
       // Update local state
       setChurchSettings(prev => prev ? { ...prev, ...data } : null);
 
-      toast({
-        title: "Sucesso",
-        description: "Dados da igreja atualizados com sucesso!",
-      });
+      toast.success("Dados da igreja atualizados com sucesso!");
       return { success: true };
     } catch (error: any) {
       console.error('Error updating church settings:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao atualizar dados da igreja",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Erro ao atualizar dados da igreja");
       return { success: false, error: error.message };
+    }
+  };
+
+  const uploadChurchLogo = async (file: File) => {
+    if (!profile || profile.role !== 'admin') {
+      toast.error('Sem permissão para alterar logo da igreja');
+      return { success: false, url: null };
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.tenant_id}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('church-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('church-logos')
+        .getPublicUrl(filePath);
+
+      // Update tenant with logo URL
+      const { error: updateError } = await supabase
+        .from('tenants')
+        .update({ logo: publicUrl })
+        .eq('id', profile.tenant_id);
+
+      if (updateError) throw updateError;
+
+      toast.success('Logo da igreja atualizada com sucesso!');
+      await fetchSettings();
+      return { success: true, url: publicUrl };
+    } catch (error) {
+      console.error('Error uploading church logo:', error);
+      toast.error('Erro ao fazer upload da logo');
+      return { success: false, url: null };
     }
   };
 
@@ -191,6 +213,7 @@ export function useSettings() {
     updatePassword,
     updateUserProfile,
     updateChurchSettings,
+    uploadChurchLogo,
     refetch: fetchSettings,
   };
 }
