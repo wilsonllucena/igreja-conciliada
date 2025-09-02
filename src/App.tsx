@@ -14,6 +14,7 @@ import EventDetail from "./pages/EventDetail";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
 import PublicEvent from "./pages/PublicEvent";
+import PublicAppointments from "./pages/PublicAppointments";
 import Auth from "./pages/Auth";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
@@ -77,6 +78,7 @@ const App = () => (
             } />
             <Route path="/evento/:id" element={<PublicEvent />} />
             <Route path="/event/:id" element={<EventDetail />} />
+            <Route path="/agendar" element={<PublicAppointments />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
