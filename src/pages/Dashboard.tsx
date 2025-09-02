@@ -2,7 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import StatCard from '@/components/StatCard';
-import { mockStats, mockAppointments, mockEvents } from '@/data/mockData';
+import { useMembers } from '@/hooks/useMembers';
+import { useLeaders } from '@/hooks/useLeaders';
+import { useEvents } from '@/hooks/useEvents';
+import { useAppointments } from '@/hooks/useAppointments';
 import { 
   Users, 
   UserCheck, 
@@ -17,15 +20,23 @@ import { ptBR } from 'date-fns/locale';
 import heroImage from '@/assets/church-hero.jpg';
 
 const Dashboard = () => {
-  const upcomingAppointments = mockAppointments
-    .filter(apt => apt.status === 'scheduled' && apt.scheduledAt > new Date())
-    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+  const { members } = useMembers();
+  const { leaders } = useLeaders();
+  const { events } = useEvents();
+  const { appointments } = useAppointments();
+
+  const upcomingAppointments = appointments
+    .filter(apt => apt.status === 'scheduled' && new Date(apt.scheduled_at) > new Date())
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
     .slice(0, 3);
 
-  const upcomingEvents = mockEvents
-    .filter(event => event.scheduledAt > new Date())
-    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+  const upcomingEvents = events
+    .filter(event => new Date(event.scheduled_at) > new Date())
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
     .slice(0, 3);
+
+  const activeLeaders = leaders.filter(leader => leader.is_available_for_appointments);
+  const activeMembers = members.filter(member => member.status === 'active');
 
   return (
     <div className="space-y-8">
@@ -62,24 +73,24 @@ const Dashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total de Membros"
-          value={mockStats.totalMembers}
+          value={activeMembers.length}
           icon={Users}
           trend={{ value: 12, isPositive: true }}
         />
         <StatCard
           title="Líderes Ativos"
-          value={mockStats.totalLeaders}
+          value={activeLeaders.length}
           icon={UserCheck}
           trend={{ value: 5, isPositive: true }}
         />
         <StatCard
           title="Agendamentos Pendentes"
-          value={mockStats.upcomingAppointments}
+          value={upcomingAppointments.length}
           icon={Calendar}
         />
         <StatCard
           title="Próximos Eventos"
-          value={mockStats.upcomingEvents}
+          value={upcomingEvents.length}
           icon={CalendarDays}
           trend={{ value: 25, isPositive: true }}
         />
@@ -105,7 +116,7 @@ const Dashboard = () => {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">{appointment.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {format(appointment.scheduledAt, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(appointment.scheduled_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                   <div className="text-right">
@@ -139,14 +150,14 @@ const Dashboard = () => {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">{event.title}</p>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <span>{format(event.scheduledAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                      <span>{format(new Date(event.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                       <span>•</span>
                       <MapPin className="h-3 w-3" />
                       <span className="truncate">{event.location}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{event.currentAttendees}</p>
+                    <p className="text-sm font-medium">{event.current_attendees}</p>
                     <p className="text-xs text-muted-foreground">inscritos</p>
                   </div>
                 </div>
