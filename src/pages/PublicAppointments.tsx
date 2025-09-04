@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, Phone, Mail, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, Clock, User, Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -21,34 +21,24 @@ interface Leader {
   tenant_id: string;
 }
 
-interface Member {
-  id: string;
-  name: string;
-  email: string;
-  tenant_id: string;
-}
 
 export default function PublicAppointments() {
   const navigate = useNavigate();
   const [leaders, setLeaders] = useState<Leader[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   // Form state
   const [selectedLeader, setSelectedLeader] = useState('');
-  const [selectedMember, setSelectedMember] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState('');
   const [duration, setDuration] = useState('60');
   
-  // New visitor fields
+  // Visitor fields
   const [visitorName, setVisitorName] = useState('');
-  const [visitorEmail, setVisitorEmail] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
-  const [isNewVisitor, setIsNewVisitor] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -66,16 +56,7 @@ export default function PublicAppointments() {
 
       if (leadersError) throw leadersError;
 
-      // Fetch members from all tenants
-      const { data: membersData, error: membersError } = await supabase
-        .from('members')
-        .select('id, name, email, tenant_id')
-        .eq('status', 'active');
-
-      if (membersError) throw membersError;
-
       setLeaders(leadersData || []);
-      setMembers(membersData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -91,28 +72,10 @@ export default function PublicAppointments() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedLeader || !title || !selectedDate || !selectedTime) {
+    if (!selectedLeader || !title || !selectedDate || !selectedTime || !visitorName || !visitorPhone) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedMember && !isNewVisitor) {
-      toast({
-        title: "Erro",
-        description: "Selecione um membro ou marque como novo visitante.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isNewVisitor && (!visitorName || !visitorEmail || !visitorPhone)) {
-      toast({
-        title: "Erro",
-        description: "Para novos visitantes, preencha nome, email e telefone.",
         variant: "destructive",
       });
       return;
@@ -124,25 +87,19 @@ export default function PublicAppointments() {
       const leader = leaders.find(l => l.id === selectedLeader);
       if (!leader) throw new Error('Líder não encontrado');
 
-      let memberId = selectedMember;
+      // Create member record first
+      const { data: newMember, error: memberError } = await supabase
+        .from('members')
+        .insert({
+          name: visitorName,
+          phone: visitorPhone,
+          tenant_id: leader.tenant_id,
+          status: 'active'
+        })
+        .select()
+        .single();
 
-      // If new visitor, create member record first
-      if (isNewVisitor) {
-        const { data: newMember, error: memberError } = await supabase
-          .from('members')
-          .insert({
-            name: visitorName,
-            email: visitorEmail,
-            phone: visitorPhone,
-            tenant_id: leader.tenant_id,
-            status: 'active'
-          })
-          .select()
-          .single();
-
-        if (memberError) throw memberError;
-        memberId = newMember.id;
-      }
+      if (memberError) throw memberError;
 
       // Create appointment
       const scheduledAt = new Date(selectedDate);
@@ -153,7 +110,7 @@ export default function PublicAppointments() {
         .from('appointments')
         .insert({
           leader_id: selectedLeader,
-          member_id: memberId,
+          member_id: newMember.id,
           title,
           description,
           scheduled_at: scheduledAt.toISOString(),
@@ -171,16 +128,13 @@ export default function PublicAppointments() {
 
       // Reset form
       setSelectedLeader('');
-      setSelectedMember('');
       setTitle('');
       setDescription('');
       setSelectedDate(undefined);
       setSelectedTime('');
       setDuration('60');
       setVisitorName('');
-      setVisitorEmail('');
       setVisitorPhone('');
-      setIsNewVisitor(false);
 
     } catch (error) {
       console.error('Error creating appointment:', error);
@@ -264,70 +218,26 @@ export default function PublicAppointments() {
                 </Select>
               </div>
 
-              {/* Member or New Visitor */}
+              {/* Contact Information */}
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="newVisitor"
-                    checked={isNewVisitor}
-                    onChange={(e) => setIsNewVisitor(e.target.checked)}
-                    className="rounded"
+                <div className="space-y-2">
+                  <Label htmlFor="visitorName">Nome Completo *</Label>
+                  <Input
+                    id="visitorName"
+                    value={visitorName}
+                    onChange={(e) => setVisitorName(e.target.value)}
+                    placeholder="Seu nome completo"
                   />
-                  <Label htmlFor="newVisitor">Sou um novo visitante</Label>
                 </div>
-
-                {isNewVisitor ? (
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                    <div className="space-y-2">
-                      <Label htmlFor="visitorName">Nome Completo *</Label>
-                      <Input
-                        id="visitorName"
-                        value={visitorName}
-                        onChange={(e) => setVisitorName(e.target.value)}
-                        placeholder="Seu nome completo"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="visitorEmail">Email *</Label>
-                      <Input
-                        id="visitorEmail"
-                        type="email"
-                        value={visitorEmail}
-                        onChange={(e) => setVisitorEmail(e.target.value)}
-                        placeholder="seu@email.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="visitorPhone">Telefone *</Label>
-                      <Input
-                        id="visitorPhone"
-                        value={visitorPhone}
-                        onChange={(e) => setVisitorPhone(e.target.value)}
-                        placeholder="(11) 99999-1234"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="member">Membro</Label>
-                    <Select value={selectedMember} onValueChange={setSelectedMember}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um membro (opcional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members.map((member) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              {member.name} - {member.email}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="visitorPhone">Telefone *</Label>
+                  <Input
+                    id="visitorPhone"
+                    value={visitorPhone}
+                    onChange={(e) => setVisitorPhone(e.target.value)}
+                    placeholder="(11) 99999-1234"
+                  />
+                </div>
               </div>
 
               {/* Title */}
