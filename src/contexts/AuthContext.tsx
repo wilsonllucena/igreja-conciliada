@@ -39,6 +39,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Enhanced profile refresh with validation and error handling
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const profileData = await optimizedQueries.getUserProfile(user.id);
+      
+      // Validate profile data structure
+      if (profileData) {
+        setProfile(profileData as Profile);
+      } else {
+        console.error('Invalid profile data received:', profileData);
+        toast({
+          title: "Erro de Dados",
+          description: "Dados do perfil inválidos. Tente fazer login novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      if (error instanceof SupabaseError) {
+        toast({
+          title: "Erro ao Carregar Perfil",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -97,36 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setProfile(null);
   };
-
-  // Enhanced profile refresh with validation and error handling
-  const refreshProfile = useCallback(async () => {
-    if (!user?.id) return;
-
-    try {
-      const profileData = await optimizedQueries.getUserProfile(user.id);
-      
-      // Validate profile data structure
-      if (profileData) {
-        setProfile(profileData as Profile);
-      } else {
-        console.error('Invalid profile data received:', profileData);
-        toast({
-          title: "Erro de Dados",
-          description: "Dados do perfil inválidos. Tente fazer login novamente.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      if (error instanceof SupabaseError) {
-        toast({
-          title: "Erro ao Carregar Perfil",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    }
-  }, [user?.id]);
 
   // Permission checking
   const hasPermission = useCallback((permission: string): boolean => {
