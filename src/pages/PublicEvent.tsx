@@ -256,7 +256,7 @@ const PublicEvent = () => {
                     </div>
                   </div>
 
-                  {event.requires_payment && event.price && (
+                  {event.requires_payment && event.price > 0 && (
                     <div className="flex items-start space-x-3">
                       <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
@@ -339,7 +339,7 @@ const PublicEvent = () => {
                         {registering ? 'Inscrevendo...' : 'Confirmar Inscrição'}
                       </Button>
 
-                      {event.requires_payment && event.price && (
+                      {event.requires_payment && event.price > 0 && (
                         <p className="text-xs text-muted-foreground text-center">
                           * Após a inscrição, você receberá instruções para pagamento de R$ {event.price.toFixed(2).replace('.', ',')}
                         </p>
