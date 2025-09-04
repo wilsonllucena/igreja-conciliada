@@ -1,0 +1,117 @@
+---
+description: Protocolos para Modo Planejador e Modo Depurador
+---
+
+# Modos Especiais de Trabalho
+
+## Modo Planejador 🎯
+
+### Quando Ativar
+- Quando solicitado explicitamente: "Entre no Modo Planejador"
+- Para mudanças complexas que afetam múltiplos arquivos
+- Quando o escopo da alteração não está claro
+
+### Protocolo Obrigatório
+
+1. **Análise Profunda**: Reflita sobre as mudanças solicitadas
+2. **Mapeamento Completo**: Analise o código existente para mapear TODO o escopo
+3. **Perguntas Esclarecedoras**: Faça 4-6 perguntas baseadas nas descobertas:
+   - Qual o comportamento esperado em cenários específicos?
+   - Como deve ser tratado [caso específico encontrado]?
+   - Devemos manter compatibilidade com [funcionalidade existente]?
+   - Qual a prioridade entre [opção A] e [opção B]?
+
+4. **Plano Abrangente**: Após as respostas, elabore um plano detalhado
+5. **Aprovação**: Aguarde aprovação explícita antes de implementar
+6. **Execução Faseada**: Implemente todas as etapas do plano
+7. **Acompanhamento**: Após cada fase, reporte progresso e próximos passos
+
+### Estrutura do Plano
+```markdown
+## Plano de Implementação
+
+### Análise do Código Atual
+- [Arquivo X] atualmente faz Y
+- [Serviço Z] seria impactado porque...
+
+### Fases de Implementação
+1. **Fase 1**: [Descrição] - Arquivos: [...] - Tempo estimado: [...]
+2. **Fase 2**: [Descrição] - Arquivos: [...] - Tempo estimado: [...]
+3. **Fase N**: [Descrição] - Arquivos: [...] - Tempo estimado: [...]
+
+### Riscos e Considerações
+- Risco 1: [descrição] - Mitigação: [...]
+- Risco 2: [descrição] - Mitigação: [...]
+```
+
+## Modo Depurador 🐛
+
+### Quando Ativar
+- Quando solicitado explicitamente: "Entre no Modo Depurador"
+- Para bugs complexos ou comportamentos inesperados
+- Quando a causa raiz não é óbvia
+
+### Sequência Obrigatória
+
+1. **Reflexão Inicial**: Liste 5-7 possíveis causas do problema
+2. **Priorização**: Reduza para 1-2 causas mais prováveis
+3. **Logging Estratégico**: Adicione logs para validar hipóteses:
+   - Entrada de dados
+   - Transformações intermediárias
+   - Estados de variáveis críticas
+   - Fluxo de controle
+
+4. **Coleta de Evidências**:
+   - Logs do console (se aplicável)
+   - Logs de rede (se aplicável) 
+   - Logs do servidor
+   - Estados de variáveis
+
+5. **Análise Abrangente**: Reflita profundamente sobre as evidências
+6. **Diagnóstico**: Produza análise completa do problema
+7. **Solução**: Implemente a correção
+8. **Limpeza**: Peça aprovação para remover logs temporários
+
+### Template de Debugging
+```markdown
+## Análise de Bug
+
+### Possíveis Causas Identificadas
+1. [Causa 1] - Probabilidade: Alta/Média/Baixa
+2. [Causa 2] - Probabilidade: Alta/Média/Baixa
+...
+
+### Hipóteses Prioritárias
+1. [Hipótese principal] - Porque: [evidência]
+2. [Hipótese secundária] - Porque: [evidência]
+
+### Logs Adicionados
+- [Arquivo]: linha X - para verificar [variável Y]
+- [Arquivo]: linha Z - para rastrear [fluxo W]
+
+### Análise dos Logs
+[Análise detalhada baseada nos logs coletados]
+
+### Diagnóstico Final
+[Causa raiz identificada e justificativa]
+
+### Plano de Correção
+[Mudanças específicas necessárias]
+```
+
+## Integração com Projeto Atual
+
+### Arquivos Relevantes para Debugging
+- **Services**: [services/](mdc:src/services/) - Lógica de negócio principal
+- **Providers**: [providers/](mdc:src/providers/) - Integrações que podem falhar
+- **Entities**: [entities/](mdc:src/entities/) - Problemas de mapeamento de dados
+- **Utils**: [utils/](mdc:src/utils/) - Utilitários compartilhados
+
+### Logs Específicos do Projeto
+- Sempre considere logs do [Taya Provider](mdc:src/providers/taya.provider.ts)
+- Monitore operações de banco via entities
+- Verifique processamento de arquivos em services
+
+---
+
+*Estes modos garantem abordagem sistemática para planejamento e debugging, mantendo qualidade e controle em situações complexas.*

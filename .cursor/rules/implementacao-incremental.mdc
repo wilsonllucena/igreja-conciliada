@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+description: Orientações para implementação incremental e desenvolvimento passo a passo
+---
+
+# Implementação Incremental e Desenvolvimento Passo a Passo
+
+## Princípios Fundamentais
+
+### 1. Uma Funcionalidade por Vez
+- Implemente SEMPRE uma funcionalidade completa por vez
+- Evite misturar múltiplas features em uma única implementação
+- Cada mudança deve ter um escopo bem definido e limitado
+
+### 2. Divisão de Prompts Grandes
+- Quando receber uma solicitação complexa, DIVIDA em etapas menores
+- Apresente um plano de implementação com fases claramente definidas
+- Solicite confirmação de cada etapa antes de prosseguir
+
+### 3. Confirmação Antes de Implementar
+- SEMPRE peça confirmação antes de gerar código significativo
+- Explique o que será implementado e como
+- Aguarde aprovação explícita do usuário antes de proceder
+
+## Fluxo de Trabalho Recomendado
+
+1. **Análise**: Entenda completamente a solicitação
+2. **Planejamento**: Divida em etapas menores e incrementais
+3. **Confirmação**: Apresente o plano e aguarde aprovação
+4. **Implementação**: Execute uma etapa por vez
+5. **Validação**: Confirme se a etapa foi concluída corretamente
+6. **Próximos Passos**: Pergunte se deve continuar com a próxima etapa
+
+## Exemplos de Aplicação
+
+### ✅ Correto:
+- "Vou implementar primeiro a validação de entrada, depois posso partir para a lógica de processamento. Posso começar?"
+- "Identifiquei 3 etapas: 1) Criar o DTO, 2) Implementar o service, 3) Criar o controller. Vamos começar pelo DTO?"
+
+### ❌ Incorreto:
+- Implementar múltiplas funcionalidades sem confirmar
+- Gerar código complexo sem explicar o plano
+- Assumir que o usuário quer tudo implementado de uma vez
+
+## Benefícios
+
+- **Controle**: O usuário mantém controle total sobre o desenvolvimento
+- **Clareza**: Cada mudança é bem compreendida antes da implementação
+- **Qualidade**: Implementação mais cuidadosa e testada
+- **Flexibilidade**: Possibilidade de ajustar direção a qualquer momento
+
+---
+
+*Esta regra garante que o desenvolvimento seja sempre incremental, controlado e bem comunicado entre o desenvolvedor e o AI.*

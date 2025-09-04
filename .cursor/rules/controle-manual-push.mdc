@@ -1,0 +1,141 @@
+---
+alwaysApply: true
+---
+
+# Controle Manual de Push - Política Obrigatória
+
+## Princípio Fundamental
+
+**NUNCA fazer push automaticamente após commits.** O push deve SEMPRE ser uma ação manual e consciente do usuário.
+
+## Regras Obrigatórias
+
+### 1. Separação Commit vs Push
+- **Commit**: Operação local que salva mudanças no repositório local
+- **Push**: Operação remota que envia commits para o repositório remoto
+- Estas são operações SEPARADAS e devem ser tratadas independentemente
+
+### 2. Workflow Obrigatório
+```bash
+# ✅ Correto: Duas etapas distintas
+git add .
+git commit -m "feat: implementa nova funcionalidade"
+# PAUSA - Usuário decide quando fazer push
+git push origin main
+
+# ❌ Incorreto: Push automático após commit
+git commit -m "feat: nova funcionalidade" && git push origin main
+```
+
+### 3. Motivos para Push Manual
+
+#### Controle de Timing
+- Permite revisar commits antes de enviar
+- Possibilita ajustes de último momento
+- Evita pushs acidentais de código incompleto
+
+#### Controle de Qualidade
+- Tempo para executar testes locais
+- Verificação final do código
+- Possibilidade de squash/rebase se necessário
+
+#### Controle de Deploy
+- Em ambientes com CI/CD, push pode triggar deploy
+- Usuário deve ter controle total sobre quando isso acontece
+- Evita deploys não intencionais
+
+## Implementação no Código
+
+### ✅ Comandos Permitidos
+```bash
+# Commit individual
+git commit -m "feat: adiciona validação de entrada"
+
+# Commit com staging
+git add . && git commit -m "fix: corrige bug de validação"
+
+# Push manual separado
+git push origin main
+git push origin feature-branch
+```
+
+### ❌ Comandos Proibidos
+```bash
+# Push automático após commit
+git commit -m "mudança" && git push
+
+# Scripts que fazem commit + push automaticamente
+./deploy.sh  # se incluir push automático
+
+# Aliases que combinam commit + push
+git cap "mensagem"  # commit + push em uma operação
+```
+
+## Instruções para AI/Assistentes
+
+### Quando Sugerir Commits
+1. Sempre sugerir apenas o comando de commit
+2. NUNCA incluir push na mesma linha de comando
+3. Mencionar explicitamente que push é uma etapa separada
+
+### Exemplo de Orientação Correta
+```
+"Execute o commit com o comando:
+git commit -m 'feat: implementa funcionalidade X'
+
+Após revisar o commit, você pode fazer push quando estiver pronto:
+git push origin main"
+```
+
+### Exemplo de Orientação Incorreta
+```
+"Execute:
+git commit -m 'feat: implementa funcionalidade X' && git push origin main"
+```
+
+## Exceções (Muito Raras)
+
+### Quando Push Automático Pode Ser Considerado
+- Scripts de CI/CD em pipelines controladas
+- Ambientes de desenvolvimento isolados e pessoais
+- Deploy automático em staging (NUNCA em produção)
+
+### Condições para Exceção
+- Aprovação explícita do usuário
+- Ambiente claramente identificado como seguro
+- Documentação clara do comportamento automático
+
+## Checklist de Verificação
+
+### ✅ Antes de Sugerir Qualquer Comando:
+1. O comando inclui push automático?
+2. O usuário tem controle total sobre o timing?
+3. Existe separação clara entre commit e push?
+4. O usuário pode revisar antes de enviar para remoto?
+
+### 🚫 Sinais de Violação:
+- `&& git push` em comandos
+- Scripts que fazem commit + push
+- Sugestões de push imediatamente após commit
+- Automação que remove controle do usuário
+
+## Benefícios da Política
+
+### 1. Segurança
+- Evita pushs acidentais de código sensível
+- Permite revisão final antes de compartilhar
+- Reduz risco de quebrar código remoto
+
+### 2. Qualidade
+- Tempo para testes locais adicionais
+- Possibilidade de ajustes de última hora
+- Melhor organização de commits
+
+### 3. Controle
+- Usuário mantém controle total sobre timing
+- Possibilidade de trabalhar offline
+- Flexibilidade para organizar múltiplos commits
+
+---
+
+*Esta política garante que o usuário sempre mantenha controle total sobre quando suas mudanças são enviadas para o repositório remoto, promovendo segurança, qualidade e flexibilidade no desenvolvimento.*

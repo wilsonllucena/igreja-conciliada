@@ -1,0 +1,215 @@
+---
+alwaysApply: true
+---
+
+# TypeScript Rigoroso - Práticas Obrigatórias
+
+## Princípios Fundamentais
+
+### 1. Proibição de @ts-ignore Sem Justificativa
+- **NUNCA** use `@ts-ignore` sem uma explicação detalhada
+- Toda supressão de erro TypeScript DEVE ser documentada
+- Prefira sempre corrigir o erro ao invés de suprimir
+
+### ✅ Correto:
+```typescript
+// @ts-ignore: API externa não tipada corretamente, aguardando atualização v2.3.1
+const result = externalLibrary.untypedMethod();
+
+// @ts-ignore: Tipo complexo do TypeORM que gera falso positivo
+const query = repository.createQueryBuilder('entity')
+```
+
+### ❌ Incorreto:
+```typescript
+// @ts-ignore
+const result = someMethod();
+
+// @ts-ignore erro temporário
+const data = getData();
+```
+
+## 2. Tratamento de Warnings Como Erros
+
+### Configuração Obrigatória
+- Todos os warnings TypeScript devem ser tratados como erros
+- Zero tolerância para warnings não resolvidos
+- Configure `"noEmitOnError": true` no tsconfig.json
+
+### Warnings Comuns que Devem Ser Corrigidos
+- Variáveis não utilizadas (`noUnusedLocals: true`)
+- Parâmetros não utilizados (`noUnusedParameters: true`)
+- Imports não utilizados
+- Propriedades opcionais mal definidas
+- Any implícito (`noImplicitAny: true`)
+
+## 3. Tipagem Rigorosa Obrigatória
+
+### Evitar `any` a Todo Custo
+```typescript
+// ❌ Nunca faça isso
+const data: any = getData();
+
+// ✅ Prefira tipagem específica
+interface ApiResponse {
+  id: number;
+  name: string;
+  status: 'active' | 'inactive';
+}
+const data: ApiResponse = getData();
+
+// ✅ Se necessário, use unknown e faça type guards
+const data: unknown = getData();
+if (isApiResponse(data)) {
+  // Agora data é do tipo ApiResponse
+  console.log(data.name);
+}
+```
+
+### Tipos Explícitos para Funções Públicas
+```typescript
+// ✅ Correto: tipos explícitos
+export function processarCessao(
+  dados: CessionDto
+): Promise<CessionEntity> {
+  return this.cessionService.create(dados);
+}
+
+// ❌ Incorreto: tipos inferidos para APIs públicas
+export function processarCessao(dados) {
+  return this.cessionService.create(dados);
+}
+```
+
+## 4. Validação de Nullability
+
+### Strict Null Checks Obrigatório
+- Configure `"strictNullChecks": true`
+- Sempre trate possibilidades de null/undefined
+- Use optional chaining e nullish coalescing
+
+```typescript
+// ✅ Correto: tratamento explícito de null
+const usuario = await this.userService.findById(id);
+if (!usuario) {
+  throw new NotFoundException('Usuário não encontrado');
+}
+return usuario.nome; // Seguro após verificação
+
+// ✅ Correto: usando optional chaining
+const nomeCompleto = usuario?.profile?.fullName ?? 'Nome não disponível';
+
+// ❌ Incorreto: assumindo que nunca será null
+const nomeCompleto = usuario.profile.fullName; // Pode quebrar
+```
+
+## 5. Interfaces e Tipos Bem Definidos
+
+### Estrutura Obrigatória
+- Todos os objetos complexos devem ter interfaces
+- Use union types para valores específicos
+- Prefira `interface` para objetos, `type` para unions/primitivos
+
+```typescript
+// ✅ Correto: interface bem definida
+interface CessionRequest {
+  fundId: number;
+  contractIds: string[];
+  requestedAmount: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  metadata?: {
+    createdBy: string;
+    tags: string[];
+  };
+}
+
+// ❌ Incorreto: objeto sem tipagem
+const request = {
+  fundId: 123,
+  contractIds: ['abc', 'def'],
+  // ... sem tipo definido
+};
+```
+
+## 6. Error Handling Tipado
+
+### Exceções Tipadas
+```typescript
+// ✅ Correto: erros específicos e tipados
+class CessionProcessingError extends Error {
+  constructor(
+    message: string,
+    public readonly cessionId: string,
+    public readonly errorCode: 'VALIDATION_FAILED' | 'EXTERNAL_API_ERROR' | 'TIMEOUT'
+  ) {
+    super(message);
+    this.name = 'CessionProcessingError';
+  }
+}
+
+// ✅ Uso correto com tipos específicos
+try {
+  await this.processCession(data);
+} catch (error) {
+  if (error instanceof CessionProcessingError) {
+    // Tratamento específico
+    this.logger.error('Cession processing failed', {
+      cessionId: error.cessionId,
+      errorCode: error.errorCode
+    });
+  } else {
+    // Re-throw erros não esperados
+    throw error;
+  }
+}
+```
+
+## 7. Checklist Pré-Commit
+
+### ✅ Verificações Obrigatórias:
+1. Zero erros TypeScript (`tsc --noEmit`)
+2. Zero warnings TypeScript
+3. Todos os `@ts-ignore` estão documentados
+4. Tipos explícitos em funções públicas
+5. Null checks implementados onde necessário
+6. Interfaces definidas para objetos complexos
+
+### 🚫 Práticas Proibidas:
+- `@ts-ignore` sem comentário explicativo
+- Uso de `any` sem justificativa extrema
+- Warnings não resolvidos
+- Funções públicas sem tipagem explícita
+- Assumir que valores nunca são null/undefined
+
+## 8. Configuração TypeScript Recomendada
+
+```json
+// tsconfig.json - configurações obrigatórias
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmitOnError": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
+```
+
+## 9. Integração com Linter
+
+### ESLint Rules Obrigatórias
+```json
+{
+  "@typescript-eslint/no-explicit-any": "error",
+  "@typescript-eslint/ban-ts-comment": "error",
+  "@typescript-eslint/no-unused-vars": "error",
+  "@typescript-eslint/strict-boolean-expressions": "error"
+}
+```
+
+---
+
+*Esta regra garante que o código TypeScript seja sempre robusto, bem tipado e livre de erros, mantendo alta qualidade e confiabilidade do sistema.*

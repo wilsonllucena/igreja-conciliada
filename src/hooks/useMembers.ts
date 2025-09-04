@@ -1,78 +1,105 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { Member, MemberSchema } from '@/types';
+import { z } from 'zod';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address?: string;
-  date_of_birth?: string;
-  groups: string[];
-  tenant_id: string;
-  status: 'active' | 'inactive';
-  joined_at: string;
-  created_at: string;
-  updated_at: string;
-}
+// Database insert type
+type MemberInsert = Database['public']['Tables']['members']['Insert'];
+
+// Zod schema for member creation/update with database field names  
+const MemberCreateSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(1, "Telefone é obrigatório"),
+  address: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  groups: z.array(z.string()).default([]),
+  status: z.enum(['active', 'inactive']).default('active'),
+  tenant_id: z.string()
+});
+
+type MemberCreate = z.infer<typeof MemberCreateSchema>;
 
 export function useMembers() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     if (!profile?.tenant_id) return;
 
     setLoading(true);
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('tenant_id', profile.tenant_id)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('tenant_id', profile.tenant_id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) throw error;
+      
+      setMembers(data || []);
+    } catch (error) {
+      console.error('fetchMembers error:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os membros.",
         variant: "destructive",
       });
-    } else {
-      setMembers(data || []);
     }
     setLoading(false);
-  };
+  }, [profile?.tenant_id]);
 
-  const createMember = async (memberData: Omit<Member, 'id' | 'tenant_id' | 'created_at' | 'updated_at'>) => {
+  const createMember = async (memberData: Omit<MemberCreate, 'tenant_id'>) => {
     if (!profile?.tenant_id) return { error: new Error('Usuário não autenticado') };
 
-    const { data, error } = await supabase
-      .from('members')
-      .insert([{
+    try {
+      // Validate data with Zod
+      const validatedData = MemberCreateSchema.parse({
         ...memberData,
         tenant_id: profile.tenant_id,
-      }])
-      .select()
-      .single();
+      });
 
-    if (error) {
+      const { data, error } = await supabase
+        .from('members')
+        .insert([validatedData as MemberInsert])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Membro criado com sucesso!",
+      });
+
+      fetchMembers();
+      return { data };
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errorMessages = validationError.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join(', ');
+        
+        toast({
+          title: "Erro de Validação",
+          description: errorMessages,
+          variant: "destructive",
+        });
+        return { error: validationError };
+      }
+      
+      console.error('createMember error:', validationError);
       toast({
         title: "Erro",
         description: "Não foi possível criar o membro.",
         variant: "destructive",
       });
-      return { error };
+      return { error: validationError };
     }
-
-    toast({
-      title: "Sucesso",
-      description: "Membro criado com sucesso!",
-    });
-
-    fetchMembers();
-    return { data };
   };
 
   const updateMember = async (id: string, memberData: Partial<Member>) => {
@@ -129,7 +156,7 @@ export function useMembers() {
     if (profile?.tenant_id) {
       fetchMembers();
     }
-  }, [profile]);
+  }, [profile?.tenant_id, fetchMembers]);
 
   return {
     members,

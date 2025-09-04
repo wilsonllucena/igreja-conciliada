@@ -18,6 +18,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import heroImage from '@/assets/church-hero.jpg';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Dashboard = () => {
   const { members } = useMembers();
@@ -25,14 +26,17 @@ const Dashboard = () => {
   const { events } = useEvents();
   const { appointments } = useAppointments();
 
+  // Get authenticated user information
+  const { user, profile } = useAuth();
+
   const upcomingAppointments = appointments
     .filter(apt => apt.status === 'scheduled' && new Date(apt.scheduled_at) > new Date())
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
     .slice(0, 3);
 
   const upcomingEvents = events
-    .filter(event => new Date(event.scheduled_at) > new Date())
-    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
+    .filter(event => new Date(event.scheduledAt) > new Date())
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
     .slice(0, 3);
 
   const activeLeaders = leaders.filter(leader => leader.is_available_for_appointments);
@@ -49,10 +53,10 @@ const Dashboard = () => {
         <div className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="max-w-2xl">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
-              Bem-vindo ao Dashboard
+              Bem-vindo(a) {profile?.name.split(' ')[0]}
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-6">
-              Gerencie sua igreja de forma simples e eficiente
+              Gerencie sua igreja de forma simples com iGestor
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Link to="/events/new">
@@ -150,14 +154,14 @@ const Dashboard = () => {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">{event.title}</p>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <span>{format(new Date(event.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                      <span>{format(new Date(event.scheduledAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                       <span>•</span>
                       <MapPin className="h-3 w-3" />
                       <span className="truncate">{event.location}</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{event.current_attendees}</p>
+                    <p className="text-sm font-medium">{event.currentAttendees}</p>
                     <p className="text-xs text-muted-foreground">inscritos</p>
                   </div>
                 </div>

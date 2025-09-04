@@ -1,32 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { Event, EventSchema } from '@/types';
+import { z } from 'zod';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface Event {
-  id: string;
-  title: string;
-  description: string;
-  scheduled_at: string;
-  location: string;
-  banner?: string;
-  speakers: string[];
-  max_attendees?: number;
-  current_attendees: number;
-  requires_payment: boolean;
-  price?: number;
-  is_public: boolean;
-  tenant_id: string;
-  created_at: string;
-  updated_at: string;
-}
+// Database insert type
+type EventInsert = Database['public']['Tables']['events']['Insert'];
+
+// Zod schema for event creation/update with database field names
+const EventCreateSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório"),
+  description: z.string().min(1, "Descrição é obrigatória"),
+  scheduled_at: z.string().datetime("Data deve estar em formato ISO"),
+  location: z.string().min(1, "Local é obrigatório"),
+  banner: z.string().optional(),
+  speakers: z.array(z.string()).default([]),
+  max_attendees: z.number().positive().optional(),
+  current_attendees: z.number().nonnegative().default(0),
+  requires_payment: z.boolean().default(false),
+  price: z.number().nonnegative().optional(),
+  is_public: z.boolean().default(true),
+  tenant_id: z.string()
+});
+
+type EventCreate = z.infer<typeof EventCreateSchema>;
 
 export function useEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     if (!profile?.tenant_id) return;
 
     console.log('fetchEvents - tenant_id:', profile.tenant_id);
@@ -49,7 +55,7 @@ export function useEvents() {
       setEvents(data || []);
     }
     setLoading(false);
-  };
+  }, [profile?.tenant_id]);
 
   const fetchPublicEvents = async () => {
     setLoading(true);
@@ -105,33 +111,28 @@ export function useEvents() {
     return { data: publicUrl };
   };
 
-  const createEvent = async (eventData: Omit<Event, 'id' | 'tenant_id' | 'created_at' | 'updated_at' | 'current_attendees'>, bannerFile?: File) => {
+  const createEvent = async (eventData: Omit<EventCreate, 'tenant_id'>, bannerFile?: File) => {
     if (!profile?.tenant_id) return { error: new Error('Usuário não autenticado') };
 
-    console.log('createEvent - data:', eventData);
-    console.log('createEvent - tenant_id:', profile.tenant_id);
-
-    const { data, error } = await supabase
-      .from('events')
-      .insert([{
+    try {
+      // Validate data with Zod
+      const validatedData = EventCreateSchema.parse({
         ...eventData,
         tenant_id: profile.tenant_id,
         current_attendees: 0,
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('createEvent error:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar o evento.",
-        variant: "destructive",
       });
-      return { error };
-    }
 
-    console.log('createEvent success - event created:', data);
+      console.log('createEvent - validated data:', validatedData);
+
+      const { data, error } = await supabase
+        .from('events')
+        .insert([validatedData as EventInsert])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('createEvent success - event created:', data);
 
     // Upload banner if provided
     if (bannerFile && data) {
@@ -141,13 +142,35 @@ export function useEvents() {
       }
     }
 
-    toast({
-      title: "Sucesso",
-      description: "Evento criado com sucesso!",
-    });
+      toast({
+        title: "Sucesso",
+        description: "Evento criado com sucesso!",
+      });
 
-    fetchEvents();
-    return { data };
+      fetchEvents();
+      return { data };
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errorMessages = validationError.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join(', ');
+        
+        toast({
+          title: "Erro de Validação",
+          description: errorMessages,
+          variant: "destructive",
+        });
+        return { error: validationError };
+      }
+      
+      console.error('createEvent error:', validationError);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o evento.",
+        variant: "destructive",
+      });
+      return { error: validationError };
+    }
   };
 
   const updateEvent = async (id: string, eventData: Partial<Event>, bannerFile?: File) => {
@@ -212,7 +235,7 @@ export function useEvents() {
     if (profile?.tenant_id) {
       fetchEvents();
     }
-  }, [profile]);
+  }, [profile?.tenant_id, fetchEvents]);
 
   const getPublicEventLink = (eventId: string) => {
     return `${window.location.origin}/evento/${eventId}`;

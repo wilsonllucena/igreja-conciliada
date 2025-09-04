@@ -1,0 +1,153 @@
+---
+alwaysApply: true
+description: Diretrizes de segurança e gerenciamento de ambientes
+---
+
+# Segurança e Gerenciamento de Ambientes
+
+## Ambientes Suportados
+
+### 1. Development (dev)
+- Dados simulados permitidos APENAS para testes
+- Logs detalhados habilitados
+- Validações relaxadas para facilitar desenvolvimento
+
+### 2. Test (test)  
+- Dados simulados necessários e obrigatórios
+- Cobertura completa de testes
+- Ambiente isolado para validações
+
+### 3. Production (prod)
+- **NUNCA simular dados em produção**
+- Logs mínimos e seguros
+- Validações rigorosas obrigatórias
+- Monitoramento ativo
+
+## Princípios de Segurança
+
+### 1. Dados Sensíveis
+- **NUNCA** hardcode credenciais, tokens ou senhas
+- Use sempre variáveis de ambiente
+- Valide e sanitize todas as entradas
+- Implemente rate limiting quando aplicável
+
+### 2. Autenticação e Autorização
+- Sempre priorize segurança sobre conveniência
+- Explique implicações de segurança de cada decisão
+- Use tokens com expiração apropriada
+- Implemente logs de auditoria para operações sensíveis
+
+### 3. Integração com Serviços Externos
+- **Providers Atuais**: [providers/](mdc:src/providers/)
+  - [Taya Provider](mcp:src/providers/taya.provider.ts) - API financeira
+  - [SendGrid Provider](mcp:src/providers/sendgrid.provider.ts) - Email
+  - [Google Storage Provider](mcp:src/providers/google-storage.provider.ts) - Storage
+  - [Z-API Provider](mcp:src/providers/z-api.provider.ts) - WhatsApp
+
+- Sempre trate falhas de integração graciosamente
+- Implemente retry policies com backoff
+- Configure timeouts apropriados
+- Log erros sem expor dados sensíveis
+
+## Configuração de Ambiente
+
+### Estrutura Obrigatória
+```typescript
+// config/environment.ts
+export const config = {
+  environment: process.env.NODE_ENV || 'development',
+  database: {
+    host: process.env.DB_HOST,
+    // ... sem valores hardcoded
+  },
+  security: {
+    jwtSecret: process.env.JWT_SECRET,
+    // ... sempre via env vars
+  }
+}
+```
+
+### Validação de Configuração
+- Valide TODAS as variáveis de ambiente obrigatórias no startup
+- Falhe rápido se configuração essencial estiver ausente
+- Use diferentes configurações por ambiente
+
+## Checklist de Segurança
+
+### ✅ Antes de Implementar:
+1. Dados sensíveis estão em variáveis de ambiente?
+2. Entradas são validadas e sanitizadas?
+3. Autenticação está implementada corretamente?
+4. Logs não expõem informações sensíveis?
+5. Rate limiting está configurado quando necessário?
+
+### 🚫 Nunca Faça:
+- Hardcode credenciais ou tokens
+- Log senhas ou dados sensíveis
+- Ignore validação de entrada
+- Use dados reais em ambiente de teste
+- Implemente autenticação sem HTTPS
+
+## Tratamento de Erros Seguro
+
+### ❌ Incorreto:
+```typescript
+catch (error) {
+  res.status(500).json({ 
+    error: error.message, // Pode expor informações internas
+    stack: error.stack     // NUNCA exponha stack traces
+  });
+}
+```
+
+### ✅ Correto:
+```typescript
+catch (error) {
+  logger.error('Database operation failed', { 
+    userId: user.id, 
+    operation: 'createCession',
+    error: error.message 
+  });
+  
+  res.status(500).json({ 
+    message: 'Internal server error',
+    code: 'OPERATION_FAILED'
+  });
+}
+```
+
+## Monitoramento e Auditoria
+
+### Eventos que Devem Ser Logados
+- Login/logout de usuários
+- Operações financeiras (criação de cessões)
+- Falhas de autenticação
+- Acesso a dados sensíveis
+- Mudanças de configuração
+
+### Estrutura de Log Segura
+```typescript
+logger.info('User action performed', {
+  userId: user.id,           // ✅ ID do usuário
+  action: 'create_cession',  // ✅ Ação realizada
+  timestamp: new Date(),     // ✅ Timestamp
+  ip: request.ip,           // ✅ IP (se relevante)
+  // ❌ NUNCA logar senhas, tokens, dados pessoais completos
+});
+```
+
+## Configuração Específica do Projeto
+
+### Arquivo de Configuração ORM
+- [ORM Config](mcp:src/configs/ormconfig.ts) - Configuração do banco
+- Sempre use variáveis de ambiente para credenciais
+- Configure SSL para produção
+
+### Providers de Terceiros
+- Configure timeouts apropriados
+- Implemente circuit breakers se necessário
+- Monitor saúde das integrações
+
+---
+
+*Esta regra garante que todas as implementações sigam práticas seguras e adequadas para cada ambiente, protegendo dados sensíveis e mantendo a integridade do sistema.*

@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { isUser, validateAndParseUser } from '@/lib/type-guards';
+import { optimizedQueries, SupabaseError } from '@/lib/supabase-utils';
+import { toast } from '@/hooks/use-toast';
 
 interface Profile {
   id: string;
@@ -18,11 +21,14 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, name: string, churchName: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, churchName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdmin: boolean;
   isLeader: boolean;
+  isMember: boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,15 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Fetch user profile when authenticated
         if (session?.user) {
-          setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            setProfile(profileData);
-          }, 0);
+          refreshProfile();
         } else {
           setProfile(null);
         }
@@ -66,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshProfile]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -100,8 +98,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
+  // Enhanced profile refresh with validation and error handling
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const profileData = await optimizedQueries.getUserProfile(user.id);
+      
+      // Validate profile data structure
+      if (profileData) {
+        setProfile(profileData as Profile);
+      } else {
+        console.error('Invalid profile data received:', profileData);
+        toast({
+          title: "Erro de Dados",
+          description: "Dados do perfil inválidos. Tente fazer login novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      if (error instanceof SupabaseError) {
+        toast({
+          title: "Erro ao Carregar Perfil",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [user?.id]);
+
+  // Permission checking
+  const hasPermission = useCallback((permission: string): boolean => {
+    if (!profile) return false;
+    
+    // Admin has all permissions
+    if (profile.role === 'admin') return true;
+    
+    // Define role-based permissions
+    const rolePermissions: Record<string, string[]> = {
+      leader: [
+        'view_members', 'create_appointments', 'manage_events',
+        'view_reports', 'edit_member_basic_info'
+      ],
+      member: [
+        'view_own_appointments', 'register_for_events', 'view_public_events'
+      ]
+    };
+
+    return rolePermissions[profile.role]?.includes(permission) || false;
+  }, [profile]);
+
   const isAdmin = profile?.role === 'admin';
   const isLeader = profile?.role === 'leader' || profile?.role === 'admin';
+  const isMember = profile?.role === 'member' || isLeader;
 
   const value = {
     user,
@@ -111,8 +161,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
     isAdmin,
     isLeader,
+    isMember,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,0 +1,84 @@
+---
+alwaysApply: true
+---
+# Estruturação e Organização do Código
+
+## Limites e Divisão
+
+### Arquivos
+- **Máximo 200-300 linhas por arquivo**
+- Quando um arquivo ultrapassar este limite, REFATORE em arquivos menores
+- Mantenha responsabilidades bem definidas por arquivo
+
+### Funções
+- **Máximo 20-30 linhas por função**
+- Funções que crescem além disso devem ser divididas em funções menores
+- Uma função = uma responsabilidade
+
+## Princípios de Organização
+
+### 1. Responsabilidade Única
+- Cada módulo, classe e função deve ter apenas uma razão para mudar
+- Separe claramente as responsabilidades
+
+### 2. DRY (Don't Repeat Yourself)
+- **SEMPRE verifique por código similar antes de implementar**
+- Extraia funcionalidades comuns para utilitários reutilizáveis
+- Use o padrão de herança ou composição quando apropriado
+
+### 3. Estrutura Consistente
+- Mantenha a mesma estrutura de pastas para funcionalidades similares
+- Use convenções de nomenclatura consistentes
+- Siga o padrão já estabelecido no projeto: [src/](mdc:src/)
+
+## Estrutura Atual do Projeto
+
+### Organização por Camadas
+```
+src/
+├── controllers/     # Endpoints da API
+├── services/        # Lógica de negócio
+├── entities/        # Modelos de dados
+├── dtos/           # Objetos de transferência
+├── providers/      # Integrações externas
+├── utils/          # Utilitários compartilhados
+└── migrations/     # Migrações do banco
+```
+
+### Padrões Estabelecidos
+- **Entities**: [entities/](mdc:src/entities/) - Modelos TypeORM
+- **Services**: [services/](mdc:src/services/) - Lógica de negócio
+- **DTOs**: [dtos/](mdc:src/dtos/) - Validação de entrada
+- **Providers**: [providers/](mdc:src/providers/) - Integrações externas
+
+## Checklist Antes da Implementação
+
+### ✅ Verificações Obrigatórias:
+1. Existe funcionalidade similar no projeto?
+2. O arquivo atual tem menos de 300 linhas?
+3. A função tem menos de 30 linhas?
+4. A responsabilidade está bem definida?
+5. Segue os padrões de nomenclatura existentes?
+
+### 🔄 Refatoração Necessária Quando:
+- Arquivo > 300 linhas → Dividir em múltiplos arquivos
+- Função > 30 linhas → Extrair subfunções
+- Código duplicado → Criar utilitário compartilhado
+- Responsabilidades misturadas → Separar em módulos distintos
+
+## Exemplo de Boa Estrutura
+
+```typescript
+// ❌ Arquivo muito grande (400+ linhas)
+// user.service.ts (400 linhas)
+
+// ✅ Dividido apropriadamente
+// user.service.ts (80 linhas) - operações principais
+// user-validation.service.ts (60 linhas) - validações
+// user-notification.service.ts (70 linhas) - notificações
+// user.types.ts (40 linhas) - tipos e interfaces
+```
+
+---
+
+*Esta regra garante que o código permaneça limpo, organizado e fácil de manter conforme o projeto cresce.*

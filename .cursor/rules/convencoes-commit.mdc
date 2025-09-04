@@ -1,0 +1,103 @@
+---
+alwaysApply: true
+---
+
+# Convenções de Commit
+
+## Formato Obrigatório
+
+Cada tarefa deve resultar em **UM ÚNICO COMMIT** com mensagem no formato:
+
+```
+feat: [descrição da funcionalidade implementada]
+fix: [descrição do problema resolvido]
+```
+
+## Tipos de Commit
+
+### feat: (Feature)
+Para novas funcionalidades, implementações ou adições ao sistema:
+
+**Exemplos:**
+- `feat: adiciona endpoint para criação de cessões`
+- `feat: implementa validação de dados no DTO`
+- `feat: adiciona provider para integração com nova API`
+- `feat: cria service para processamento de documentos`
+
+### fix: (Correção)
+Para correção de bugs, problemas ou falhas no sistema:
+
+**Exemplos:**
+- `fix: corrige validação de CPF no processo de cessão`
+- `fix: resolve erro de timeout na integração com Taya`
+- `fix: ajusta formatação de data nos relatórios`
+- `fix: corrige vazamento de memória no processamento de arquivos`
+
+## Diretrizes de Implementação
+
+### 1. Uma Tarefa = Um Commit
+- Implemente uma funcionalidade completa por commit
+- Evite commits parciais ou quebrados
+- Cada commit deve deixar o sistema em estado funcional
+
+### 2. Descrições Claras
+- Use verbos no presente/infinitivo
+- Seja específico sobre o que foi implementado/corrigido
+- Evite mensagens vagas como "ajustes" ou "melhorias"
+
+### 3. Escopo das Mudanças
+- Mantenha commits focados em uma única responsabilidade
+- Se a tarefa for muito grande, divida em subtarefas menores
+- Cada commit deve ser revisável independentemente
+
+## Exemplos de Bons Commits
+
+### Features
+```bash
+feat: implementa geração automática de documentos CCB
+feat: adiciona cron job para processamento de cessões
+feat: cria middleware de autenticação JWT
+feat: implementa upload de arquivos para Google Storage
+```
+
+### Fixes  
+```bash
+fix: corrige cálculo de juros no processamento de cessões
+fix: resolve problema de conexão com banco de dados
+fix: ajusta validação de campos obrigatórios no DTO
+fix: corrige formatação de números nos relatórios PDF
+```
+
+## Workflow de Commit
+
+1. **Implementar** a funcionalidade/correção completa
+2. **Testar** para garantir que funciona corretamente
+3. **Stagear** todos os arquivos relacionados
+4. **Commitar** com mensagem no formato correto
+5. **Push** para o repositório
+
+```bash
+# Exemplo de workflow
+git add .
+git commit -m "feat: implementa validação de contratos SCD"
+git push origin main
+```
+
+## Validação Antes do Commit
+
+### ✅ Checklist:
+- [ ] A funcionalidade/correção está completa?
+- [ ] O código foi testado e está funcionando?
+- [ ] A mensagem segue o formato correto?
+- [ ] O commit não quebra funcionalidades existentes?
+- [ ] Todos os arquivos relevantes estão incluídos?
+
+### 🚫 Evitar:
+- Commits com mensagens genéricas
+- Múltiplos commits para uma única tarefa
+- Commits que deixam o sistema quebrado
+- Misturar features e fixes no mesmo commit
+
+---
+
+*Esta convenção garante um histórico de commits limpo, rastreável e profissional, facilitando code reviews e manutenção do projeto.*
